@@ -1,0 +1,157 @@
+---
+title: "Old Code & New Outlook"
+author: "Vincent Liu"
+date: '2022-06-24'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = F,
+                      eval = FALSE,
+                      warning = FALSE)
+```
+
+
+```{r}
+library(httr)
+library(tidyverse)
+library(stringr)
+library(RCurl)
+library(reshape2)
+library(RColorBrewer)
+library(extrafont)
+library(knitr)
+library(foreign)
+library(kableExtra)
+library(urbnthemes)
+library(grid)
+library(gridExtra)
+library(rmarkdown)
+
+set_urbn_defaults()
+```
+
+
+```{r}
+#source("NCCS_Code/Prep NCCS Core File.R")
+#source("NCCS_Code/Prep IRS BMF.R")
+```
+
+```{r}
+#getbmffile("2006", "01")
+```
+
+Clean and Process NCCS Core Data 
+```{r}
+processcorefile <- function(year, type) {
+  filepath = paste0("Data/coreco.core", year, type, ".csv")
+
+  if (type %in% c("pc", "co") ) {
+    
+    colspec = cols_only(EIN = col_character(),
+                    OUTNCCS = col_character(),
+                   SUBSECCD = col_character(),
+                     FNDNCD = col_character(),
+                        TOTREV = col_double(),
+                          EXPS = col_double(),
+                       ASS_EOY = col_double(),
+                         GRREC = col_double())
+    
+  } else if (type == "pf") {
+    
+    colspec = 
+            cols_only(EIN = col_character(),
+                  OUTNCCS = col_character(),
+                 SUBSECCD = col_character(),
+                   FNDNCD = col_character(),
+                    P1TOTREV = col_double(),
+                    P1TOTEXP = col_double(),
+                    P2TOTAST = col_double())
+    
+  }
+  else {
+    warning("Invalid file type: type must be 'co', 'pc', or 'pf'")
+  }
+  
+  file <- read_csv(filepath, col_types = colspec)
+  names(file) <- toupper(names(file))
+  return(file)
+}
+```
+
+
+```{r}
+core2019co = processcorefile("2019", "co")
+core2019pc = processcorefile("2019", "pc")
+core2019pf = processcorefile("2019", "pf")
+```
+
+
+Process the Index data and Merge it with the core fiels
+```{r}
+nteedocalleins <- read_csv("Data/nteedocalleins.csv",
+                           col_types = cols_only(EIN = col_character(),
+                                                 NteeFinal = col_character()
+                                                 )) %>% 
+                rename(NTEEFINAL = NteeFinal)
+```
+
+```{r}
+arts <- c("A")
+highered <- c("B4", "B5")
+othered <- c("B")
+envanimals <- c("C", "D")
+hospitals <- c('E20','E21','E22','E23','E24','F31','E30','E31','E32')
+otherhlth <- c("E", "F", "G", "H")
+humanserv <- c("I", "J", "K", "L", "M", "N", "O", "P")
+intl <- c("Q")
+pubben <- c("R", "S", "T", "U", "V", "W", "Y", "Z")
+relig <- c("X")
+```
+
+```{r}
+classify <- function(dataset) {
+  
+  dataset <- dataset %>%
+    left_join(nteedocalleins, by = "EIN") 
+    
+  exp = dataset$EXPS
+  firlet = str_sub(dataset$NTEEFINAL, 1, 1)
+  fir2let = str_sub(dataset$NTEEFINAL, 1, 2)
+  fir3let = str_sub(dataset$NTEEFINAL, 1, 3)
+  
+  dataset <- dataset %>%
+    mutate(NTEEGRP = "  ") %>%
+    mutate(NTEEGRP = case_when(
+      firlet %in% arts ~ "Arts",
+      firlet %in% othered & !(fir2let %in% highered)  ~ "Other education",
+      fir2let %in% highered  ~ "Higher education",
+      firlet %in% envanimals ~ "Environment and animals",
+      firlet %in% otherhlth & !(fir3let %in% hospitals) ~ "Other health care",
+      fir3let %in% hospitals ~ "Hospitals and primary care facilities",
+      firlet %in% humanserv ~ "Human services",
+      firlet %in% intl ~ "International",
+      firlet %in% pubben ~ "Other public and social benefit",
+      firlet %in% relig ~ "Religion related")) %>%
+    mutate(NTEEGRP = if_else(is.na(NTEEFINAL), "ther public and social benefit", NTEEGRP)) %>%
+    
+    mutate(EXPCAT = "  ") %>%
+    mutate(EXPCAT = case_when(
+      exp < 100000 ~ "a. Under $100,000",
+      exp >= 100000 & exp < 500000 ~ "b. $100,000 to $499,999",
+      exp >= 500000 & exp < 1000000 ~ "c. $500,000 to $999,999",
+      exp >= 1000000 & exp < 5000000 ~ "d. $1 million to $4.99 million",
+      exp >= 5000000 & exp < 10000000 ~ "e. $5 million to $9.99 million",
+      exp >= 10000000 ~ "f. $10 million or more"))
+  
+  return(dataset)
+}
+```
+
+
+```{r}
+core2019pc <- classify(core2019pc)
+```
+
+

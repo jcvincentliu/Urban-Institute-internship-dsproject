@@ -5,7 +5,9 @@ date: '2022-06-23'
 output: 
   flexdashboard::flex_dashboard:
     social: menu
-    source_code: embed 
+    source_code: embed
+    theme:flatly 
+    logo: urban-institute-logo.png
 runtime: shiny
 ---
 
