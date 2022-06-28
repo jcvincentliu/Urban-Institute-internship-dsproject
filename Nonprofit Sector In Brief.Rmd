@@ -28,6 +28,7 @@ library(urbnthemes)
 library(grid)
 library(gridExtra)
 library(rmarkdown)
+library(plotly)
 
 set_urbn_defaults()
 ```
@@ -88,7 +89,7 @@ core2019pf = processcorefile("2019", "pf")
 ```
 
 
-Process the Index data and Merge it with the core fiels
+Process the Index data and Merge it with the core files
 ```{r}
 nteedocalleins <- read_csv("Data/nteedocalleins.csv",
                            col_types = cols_only(EIN = col_character(),
@@ -134,7 +135,7 @@ classify <- function(dataset) {
       firlet %in% intl ~ "International",
       firlet %in% pubben ~ "Other public and social benefit",
       firlet %in% relig ~ "Religion related")) %>%
-    mutate(NTEEGRP = if_else(is.na(NTEEFINAL), "ther public and social benefit", NTEEGRP)) %>%
+    mutate(NTEEGRP = if_else(is.na(NTEEFINAL), "Other public and social benefit", NTEEGRP)) %>%
     
     mutate(EXPCAT = "  ") %>%
     mutate(EXPCAT = case_when(
@@ -153,5 +154,153 @@ classify <- function(dataset) {
 ```{r}
 core2019pc <- classify(core2019pc)
 ```
+
+```{r}
+# NTEE: National Taxonomy of Exempt Entities (NTEE) system
+
+# EIN: Employer Identification Number
+# ASS_EOY: Total assets at the end of year
+# EXPS:Total Expenses
+# FNDNCD: Reason for 501(c)(3) status (Under Other Descriptive Info): categorical/character
+# GRREC: Gross Income
+# OUTNCCS: Out of Scope flag: In/Out (of scope): OUT --> (see OUTREAS under Basic Info)
+# SUBSECCD: Subsection code (under Classification)
+# TOTREV: Total Revenue calculated
+# NTEEFINAL: NTEE - final
+# NTEEGRP
+# EXPCAT
+```
+
+```{r}
+core2019pc %>% 
+  head(5)     #FNDNCD, OUTNCCS, NTEEFINAL: a lot of NAs
+```
+
+Get and clean bmf (IRS Business Master File):
+```{r}
+c_types <-                      cols_only( EIN = col_character(),
+                                           NTEECC = col_character(),
+                                           STATE = col_character(),         
+                                           OUTNCCS = col_character(), 
+                                           SUBSECCD = col_character(),
+                                           FNDNCD = col_character(),
+                                      #     CFILER = col_character(),
+                                           CFINSRC = col_character(),
+                                           CTAXPER = col_character(),
+                                           CTOTREV = col_double(),
+                                           CASSETS = col_double(),
+                                           NTEEFINAL = col_character())
+
+bmf2019 = read_csv("Data/bmf.bm1908.csv", col_types = c_types)
+bmf2020 = read_csv("Data/bmf.bm2004.csv", col_types = c_types)
+bmf2022 = read_csv("Data/bmf.bm2201.csv", col_types = c_types)
+```
+
+```{r}
+inflindex <- read_csv("External_Data/Inflation Index.csv", col_types = "cd", col_names = c("Year", "CPI")) %>%
+  filter(!row_number() == 1L)
+#a <- read.csv("External_Data/Inflation Index.csv", row.names =1, header = TRUE)
+```
+
+Move to next phase of cleaning 
+
+```{r}
+
+
+bmfsize <- function(data, year) {
+
+      t1 <- data %>% 
+        filter((OUTNCCS != "OUT")) %>%
+        summarize(
+          Year = as.character(year),
+          "All registered nonprofits" = n())
+      
+      t2 <- data %>% 
+        filter((FNDNCD != "02" & FNDNCD!= "03" & FNDNCD != "04"), (SUBSECCD == "03"|SUBSECCD== "3"), (OUTNCCS != "OUT")) %>%
+        summarize(
+          Year = as.character(year),
+          "501(c)(3) public charities" = n()
+        )
+      
+    combined <- t1 %>%
+      left_join(t2, by = "Year")
+  
+    return(combined)
+}
+
+b1 <- bmfsize(bmf2019, 2019)
+b2 <- bmfsize(bmf2020, 2020)
+b3 <- bmfsize(bmf2022, 2022)
+t <- bind_rows(b1,b2,b3)
+```
+
+```{r}
+p1 <- t %>%
+#  gather(stat, value, `All registered nonprofits`, `501(c)(3) public charities`) %>%
+#  ggplot(aes(x = as.factor(Year), y = value, color = stat, group=1)) +
+  ggplot(aes(x = as.factor(Year), group=1)) +
+  geom_line(aes(y = `All registered nonprofits`, color = "blue")) +
+  geom_point(aes(y = `All registered nonprofits`, color = "blue")) +
+  geom_line(aes(y = `501(c)(3) public charities`, color = "red")) +
+  geom_point(aes(y = `501(c)(3) public charities`, color = "red")) +
+  ggtitle("Total Nonprofit Counts by Year", subtitle = "From 2019 to 2022") +
+  labs(x = "Year", y = " ") +
+   guides(color = guide_legend(title = " ")) +
+  scale_color_discrete(labels = c("All registered nonprofits", "501(c)(3) public charities")) +
+   geom_text(aes(as.factor(Year),`All registered nonprofits` , label= `All registered nonprofits`),
+              vjust= -1, 
+              position = position_dodge(width=1),
+              size =3) +
+   geom_text(aes(as.factor(Year),`501(c)(3) public charities` , label= `501(c)(3) public charities`),
+              vjust=-1, 
+              position = position_dodge(width=1),
+              size =3) +
+   ylim(NA, 1550000)
+
+p1
+# ggplotly(p1)
+```
+
+```{r}
+corefiles <- function(data, dyear, dtype) {
+  
+  if (dtype == "pc") {
+  processed <- if(dyear < 2010) filter(data, (GRREC >= 25000)) else filter(data, ((GRREC >= 50000)|(TOTREV>50000))) %>%
+      filter((is.na(OUTNCCS)|OUTNCCS != "OUT"), (FNDNCD != "02" & FNDNCD!= "03" & FNDNCD != "04")) %>%
+      summarize(
+        Reporting = n(),
+        "Revenue ($ billions)" = round((sum(as.numeric(TOTREV), na.rm =TRUE))/1000000000, digits =2),
+        "Expenses ($ billions)" = round((sum(as.numeric(EXPS), na.rm =TRUE))/1000000000, digits =2),
+        "Assets ($ billions)" = round((sum(as.numeric(ASS_EOY), na.rm =TRUE))/1000000000, digits=2))
+    processed <- melt(processed)
+    colnames(processed)[2] <- "PC"
+  
+  } elif (dtype == "co") {
+  processed <- if(dyear < 2010) filter(data, ((GRREC >= 25000)|(TOTREV>25000))) else filter(data, ((GRREC >= 50000)|(TOTREV>50000))) %>%
+      filter((OUTNCCS != "OUT")) %>%
+      summarize(
+        Reporting = n(),
+        "Revenue ($ billions)" = round((sum(as.numeric(TOTREV), na.rm =TRUE))/1000000000, digits =2),
+        "Expenses ($ billions)" = round((sum(as.numeric(EXPS), na.rm =TRUE))/1000000000, digits =2),
+        "Assets ($ billions)" = round((sum(as.numeric(ASS_EOY), na.rm =TRUE))/1000000000, digits=2))
+    processed <- melt(processed)
+    colnames(processed)[2] <- "CO"
+  
+  } elif (dtype == "pf") {
+    processed <- data %>%
+      filter(OUTNCCS != "OUT") %>%
+      summarize(
+        Reporting = n(),
+        "Revenue ($ billions)" = round((sum(as.numeric(P1TOTREV), na.rm =TRUE))/1000000000, digits =2),
+        "Expenses ($ billions)" = round((sum(as.numeric(P1TOTEXP), na.rm =TRUE))/1000000000, digits =2),
+        "Assets ($ billions)" = round((sum(as.numeric(P2TOTAST), na.rm =TRUE))/1000000000, digits=2))
+    processed <- melt(processed)
+    colnames(processed)[2] <- "PF"
+  }
+} 
+
+```
+
+
 
 

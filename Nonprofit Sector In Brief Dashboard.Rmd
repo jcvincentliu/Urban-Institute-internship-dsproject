@@ -1,26 +1,27 @@
 ---
 title: "Nonprofit Sector In Brief Dashboard"
-author: "Vincent Liu"
-date: '2022-06-23'
+date: "`r lubridate::today()`"
 output: 
   flexdashboard::flex_dashboard:
+    orientation: rows
     social: menu
     source_code: embed
-    theme:flatly 
+    theme: cosmo
     logo: urban-institute-logo.png
-runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, 
+knitr::opts_chunk$set(echo = FALSE, 
                       message = FALSE, 
                       warning =FALSE)
 ```
 
-```{r setup, include=FALSE}
+```{r, include=FALSE}
 library(flexdashboard)
 library(plotly)
 library(tidyverse)
+library(htmlwidgets)
+library(DT)
 ```
 
 
@@ -28,35 +29,67 @@ library(tidyverse)
 Summary 
 =======================================================================
 
-### **A sketch of the nonprofit landscape in the US**
+### A sketch of the nonprofit landscape in the US
+
+
+Row {data-height=600}
+-----------------------------------------------------------------------
+
+### Some Table
+
+```{r, echo=FALSE}
+t1<- USArrests %>%
+  arrange(UrbanPop) %>%
+  select(-c(Rape, UrbanPop))
+datatable(t1, style = "auto",  options = list(pageLength = 20))
+```
+
+
+Row {data-height=400}
+-----------------------------------------------------------------------
+
+### Pic 1
+```{r, echo=FALSE}
+p1 <- iris %>%
+  ggplot(aes(x =Species , y = Sepal.Length)) +
+  geom_col()
+ggplotly(p1)
+```
+
+### Pic 2
+```{r, echo=FALSE}
+p2 <- iris %>%
+  ggplot(aes(x =Species , y = Sepal.Width)) +
+  geom_col()
+ggplotly(p2)
+```
+
 
 ```{r, include=FALSE}
 # Shiny module definition (would typically be defined in a separate R script)
 
 # UI function
-worldPhonesUI <- function(id) {
-  ns <- NS(id)
-  fillCol(height = 600, flex = c(NA, 1), 
-    inputPanel(
-      selectInput(ns("region"), "Region:", choices = colnames(WorldPhones))
-    ),
-    plotOutput(ns("phonePlot"), height = "100%")
-  )
-}
+# worldPhonesUI <- function(id) {
+#   ns <- NS(id)
+#   fillCol(height = 600, flex = c(NA, 1), 
+#     inputPanel(
+#       selectInput(ns("region"), "Region:", choices = colnames(WorldPhones))
+#     ),
+#     plotOutput(ns("phonePlot"), height = "100%")
+#   )
+# }
+# 
+# # Server function
+# worldPhones <- function(input, output, session) {
+#   output$phonePlot <- renderPlot({
+#     barplot(WorldPhones[,input$region]*1000, 
+#             ylab = "Number of Telephones", xlab = "Year")
+#   })
+# }
 
-# Server function
-worldPhones <- function(input, output, session) {
-  output$phonePlot <- renderPlot({
-    barplot(WorldPhones[,input$region]*1000, 
-            ylab = "Number of Telephones", xlab = "Year")
-  })
-}
-```
-
-```{r}
 # Include the module
-worldPhonesUI("phones")
-callModule(worldPhones, "phones")
+#worldPhonesUI("phones")
+#callModule(worldPhones, "phones")
 ```
 
 
@@ -65,24 +98,26 @@ Exploration
 
 ### Inline Shiny App via shinyApp
 
-```{r}
-shinyApp(
-  ui = fillPage(
-    fillCol(flex = c(NA, 1), 
-      inputPanel(
-        selectInput("region", "Region:", choices = colnames(WorldPhones))
-      ),
-      plotOutput("phonePlot", height = "100%")
-    )
-  ),
-  server = function(input, output) {
-    output$phonePlot <- renderPlot({
-      barplot(WorldPhones[,input$region]*1000, 
-              ylab = "Number of Telephones", xlab = "Year")
-    })
-  },
-  options = list(height = 600)
-)
+Some words
+
+```{r, include=F}
+# shinyApp(
+#   ui = fillPage(
+#     fillCol(flex = c(NA, 1), 
+#       inputPanel(
+#         selectInput("region", "Region:", choices = colnames(WorldPhones))
+#       ),
+#       plotOutput("phonePlot", height = "100%")
+#     )
+#   ),
+#   server = function(input, output) {
+#     output$phonePlot <- renderPlot({
+#       barplot(WorldPhones[,input$region]*1000, 
+#               ylab = "Number of Telephones", xlab = "Year")
+#     })
+#   },
+#   options = list(height = 600)
+# )
 ```
 
 
@@ -90,6 +125,8 @@ Trend
 =======================================================================
 
 ### External Shiny App via shinyAppDir
+
+Some words
 
 ```{r}
 
@@ -101,10 +138,12 @@ Geography
 
 ### External Shiny App via shinyAppDir
 
+Some words
+
 ```{r}
-shinyAppDir(
-  system.file("examples/06_tabsets", package="shiny"),
-  options = list(height=850)
-)
+# shinyAppDir(
+#   system.file("examples/06_tabsets", package="shiny"),
+#   options = list(height=850)
+# )
 ```
 
