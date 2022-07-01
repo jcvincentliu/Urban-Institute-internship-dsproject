@@ -4,7 +4,6 @@ author: "Vincent Liu"
 date: '2022-06-24'
 output: html_document
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
                       message = F,
@@ -257,8 +256,8 @@ p1 <- t %>%
               size =3) +
    ylim(NA, 1550000)
 
-p1
-# ggplotly(p1)
+p1 #+  theme(legend.position="right", legend.direction = "vertical")
+#ggplotly(p1)
 ```
 
 ```{r}
@@ -275,7 +274,7 @@ corefiles <- function(data, dyear, dtype) {
     processed <- melt(processed)
     colnames(processed)[2] <- "PC"
   
-  } elif (dtype == "co") {
+  } else if (dtype == "co") {
   processed <- if(dyear < 2010) filter(data, ((GRREC >= 25000)|(TOTREV>25000))) else filter(data, ((GRREC >= 50000)|(TOTREV>50000))) %>%
       filter((OUTNCCS != "OUT")) %>%
       summarize(
@@ -286,7 +285,7 @@ corefiles <- function(data, dyear, dtype) {
     processed <- melt(processed)
     colnames(processed)[2] <- "CO"
   
-  } elif (dtype == "pf") {
+  } else if (dtype == "pf") {
     processed <- data %>%
       filter(OUTNCCS != "OUT") %>%
       summarize(
@@ -297,10 +296,116 @@ corefiles <- function(data, dyear, dtype) {
     processed <- melt(processed)
     colnames(processed)[2] <- "PF"
   }
+  
+  return(processed)
 } 
 
 ```
 
 
+```{r}
+pc <- corefiles(core2019pc, 2019, "pc")
+co <- corefiles(core2019co, 2019, "co")
+pf <- corefiles(core2019pf, 2019, "pf")
+
+table1.data <- pc %>%
+  left_join(co, by = "variable") %>%
+  left_join(pf, by = "variable") %>%
+   mutate(
+        Variable = variable,
+        "Reporting nonprofits" = (PC+CO+PF),
+        "Reporting public charities" = PC) %>% 
+  select(-5) %>%
+  pivot_longer(PC:`Reporting public charities`, names_to = "Type", values_to = "Value") %>%
+  rename(Variable = variable)
+
+table1.data$Variable <-ifelse(table1.data$Variable == "Reporting" & table1.data$Type == "Reporting nonprofits", 
+                             "Reporting nonprofits", as.character(table1.data$Variable))
+table1.data$Variable <-ifelse(table1.data$Variable == "Reporting" & table1.data$Type == "Reporting public charities", 
+                             "Reporting public charities", as.character(table1.data$Variable))
+```
+
+```{r}
+p2 <- table1.data %>%
+  filter(Type  %in% c("PC", "CO", "PF"), Variable != "Reporting") %>%
+  ggplot(aes(x = Variable, y = Value, fill = Type)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(Variable, Value, label=Value),
+              vjust=-1, 
+              position = position_dodge(width=1),
+              size =3) +
+  ylim(NA, 5000) +
+   theme(legend.position="right", legend.direction = "vertical")
+
+ggplotly(p2)
+```
+
+```{r}
+# https://nccs-data.urban.org/dl.php?f=core/2018/coreco.core2018co.csv
+# https://nccs-data.urban.org/dl.php?f=core/2018/coreco.core2018pc.csv
+# https://nccs-data.urban.org/dl.php?f=core/2017/coreco.core2017co.csv
+
+#path = "C:/Users/liu00/Downloads/Urban Internship/Nonprofit Sector In Brief/Data/coreco.core2018co.csv"
+
+#download.file(URL, destination_path)
+```
+
+```{r}
+table1.data.long <- pc %>%
+  left_join(co, by = "variable") %>%
+  left_join(pf, by = "variable") %>%
+   mutate(
+        Variable = variable,
+        "Reporting nonprofits" = (PC+CO+PF),
+        "Reporting public charities" = PC) %>% 
+  select(-5) 
+```
+
+```{r}
+PC_2019_ExpenseGroup <- core2019pc %>% 
+  filter(((GRREC >= 50000)|(TOTREV>50000)), #filter out organizations below minimum filing threshold for 990-EZ
+         (OUTNCCS != "OUT"), 
+         !(FNDNCD %in% c("02", "03", "04"))
+         ) %>% 
+  group_by(EXPCAT) %>%
+  summarize( 
+      Number = n(),
+      "Total Expenses" = round((sum(EXPS, na.rm =TRUE)/1000000000), digits =2),
+      "Total Assets" = round((sum(ASS_EOY, na.rm =TRUE))/1000000000, digits=2),
+      "Gross Income" = round((sum(GRREC, na.rm =TRUE))/1000000000, digits=2),
+      "Total Revenue" = round((sum(TOTREV, na.rm =TRUE))/1000000000, digits=2)
+    ) %>% 
+    #drop old variables, keep only categories and proportions
+    mutate(
+      Year = as.character(2019),
+      EXPCAT = EXPCAT,
+      Percentage = round(((Number/sum(Number))*100),digits=1),
+      "Total expenses (%)" = round(((`Total Expenses`/sum(`Total Expenses`))*100),digits=1),
+      "Total Assets (%)" = round(((`Total Assets`/sum(`Total Assets`))*100),digits=1),
+      "Gross Income (%)" = round(((`Gross Income`/sum(`Gross Income`))*100),digits=1),
+      "Total Revenue (%)" = round(((`Total Revenue`/sum(`Total Revenue`))*100),digits=1)
+    ) %>%
+  rename("Expense Group" = EXPCAT)
+  
+PC_2019_ExpenseGroup <- PC_2019_ExpenseGroup %>%
+  relocate(Year, .before = `Expense Group`) 
+  
+```
+
+```{r}
+write.csv(t, "Number_nonprofit_trend.csv") 
+
+write.csv(table1.data, "Nonprofit_finance_2019.csv")
+
+write.csv(pc, "Public_charity_2019.csv")
+
+write.csv(pf, "Private_foundation_2019.csv")
+
+write.csv(co, "other_nonprofit_2019.csv")
+
+write.csv(core2019pc, "new_core2019pc.csv")
+
+write.csv(PC_2019_ExpenseGroup, "Data/Output_Data/PC_2019_by_expense.csv")
+```
 
 

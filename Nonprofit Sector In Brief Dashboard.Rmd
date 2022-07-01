@@ -3,11 +3,9 @@ title: "Nonprofit Sector In Brief Dashboard"
 date: "`r lubridate::today()`"
 output: 
   flexdashboard::flex_dashboard:
-    orientation: rows
     social: menu
     source_code: embed
     theme: cosmo
-    logo: urban-institute-logo.png
 ---
 
 ```{r setup, include=FALSE}
@@ -18,79 +16,135 @@ knitr::opts_chunk$set(echo = FALSE,
 
 ```{r, include=FALSE}
 library(flexdashboard)
-library(plotly)
-library(tidyverse)
 library(htmlwidgets)
 library(DT)
+
+library(httr)
+library(tidyverse)
+library(stringr)
+library(RCurl)
+library(reshape2)
+library(RColorBrewer)
+library(extrafont)
+library(knitr)
+library(foreign)
+library(kableExtra)
+library(urbnthemes)
+library(grid)
+library(gridExtra)
+library(rmarkdown)
+library(plotly)
+
+set_urbn_defaults()
 ```
 
 
 
-Summary 
+Summary {.storyboard}
 =======================================================================
 
 ### A sketch of the nonprofit landscape in the US
 
+```{r}
+Data_1 <- read_csv("Number_nonprofit_trend.csv") %>%
+  select(!1)
+Data_1$Year = as.character(Data_1$Year)
 
-Row {data-height=600}
------------------------------------------------------------------------
-
-### Some Table
-
-```{r, echo=FALSE}
-t1<- USArrests %>%
-  arrange(UrbanPop) %>%
-  select(-c(Rape, UrbanPop))
-datatable(t1, style = "auto",  options = list(pageLength = 20))
+datatable(Data_1, style = "auto",  options = list(pageLength = 5))
 ```
 
 
-Row {data-height=400}
------------------------------------------------------------------------
 
-### Pic 1
-```{r, echo=FALSE}
-p1 <- iris %>%
-  ggplot(aes(x =Species , y = Sepal.Length)) +
-  geom_col()
-ggplotly(p1)
+***
+
+- The number of nonprofits have been steadily decreasing since 2019. 
+- Public charities, a special type of nonprofits, followed the same trend. 
+- The phenomenon highlights the impacts of COVID pandemics on the nonprofit landscape.
+
+
+
+### Visual Representation
+```{r}
+Data_1 %>%
+  ggplot(aes(x = as.factor(Year), group=1)) +
+  geom_line(aes(y = `All registered nonprofits`, color = "blue")) +
+  geom_point(aes(y = `All registered nonprofits`, color = "blue")) +
+  geom_line(aes(y = `501(c)(3) public charities`, color = "red")) +
+  geom_point(aes(y = `501(c)(3) public charities`, color = "red")) +
+  ggtitle("Total Nonprofit Counts by Year", subtitle = "From 2019 to 2022") +
+  labs(x = "Year", y = " ") +
+   guides(color = guide_legend(title = " ")) +
+  scale_color_discrete(labels = c("All registered nonprofits", "501(c)(3) public charities")) +
+   geom_text(aes(as.factor(Year),`All registered nonprofits` , label= `All registered nonprofits`),
+              vjust= -1, 
+              position = position_dodge(width=1),
+              size =3) +
+   geom_text(aes(as.factor(Year),`501(c)(3) public charities` , label= `501(c)(3) public charities`),
+              vjust=-1, 
+              position = position_dodge(width=1),
+              size =3) +
+   ylim(NA, 1550000)
 ```
 
-### Pic 2
-```{r, echo=FALSE}
-p2 <- iris %>%
-  ggplot(aes(x =Species , y = Sepal.Width)) +
-  geom_col()
-ggplotly(p2)
+***
+
+It shall be pointed out from the graph that the 2020 data is missing.
+
+
+Finance {.storyboard}
+=======================================================================
+
+### Financial Information By Nonprofit Type
+```{r}
+data_2 <- read_csv("Nonprofit_finance_2019.csv") %>%
+  select(!1)
+
+data_2 <-
+  data_2 %>%
+  filter(!Variable %in% c("Reporting nonprofits", "Reporting public charities"), Type %in% c("PC", "CO", "PF")) %>%
+  pivot_wider(names_from = Type, values_from = Value)
+
+datatable(data_2, style = "auto",  options = list(pageLength = 5))
 ```
 
+***
+Peaking into the financial landscape of all US-based nonprofits in 2019
 
-```{r, include=FALSE}
-# Shiny module definition (would typically be defined in a separate R script)
+- Public Charities had significantly more reporting, revenue, expenses, and assets than the other two categories
+- Private Foundation is the minority
 
-# UI function
-# worldPhonesUI <- function(id) {
-#   ns <- NS(id)
-#   fillCol(height = 600, flex = c(NA, 1), 
-#     inputPanel(
-#       selectInput(ns("region"), "Region:", choices = colnames(WorldPhones))
-#     ),
-#     plotOutput(ns("phonePlot"), height = "100%")
-#   )
-# }
-# 
-# # Server function
-# worldPhones <- function(input, output, session) {
-#   output$phonePlot <- renderPlot({
-#     barplot(WorldPhones[,input$region]*1000, 
-#             ylab = "Number of Telephones", xlab = "Year")
-#   })
-# }
 
-# Include the module
-#worldPhonesUI("phones")
-#callModule(worldPhones, "phones")
+
+### What happened here?
+```{r}
+data_3 <- read_csv("Nonprofit_finance_2019.csv") %>%
+  select(!1)
+p <- data_3 %>%
+  filter(Type  %in% c("PC", "CO", "PF"), Variable != "Reporting") %>%
+  ggplot(aes(x = Variable, y = Value, fill = Type)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(Variable, Value, label=Value),
+              vjust=-1, 
+              position = position_dodge(width=1),
+              size =3) +
+  ylim(NA, 5000) +
+   theme(legend.position="right", legend.direction = "vertical")
+
+ggplotly(p)
+
 ```
+
+***
+
+- Huge Assets for Public Charities!
+
+
+### Another way of looking at it!
+
+```{r}
+datatable(data_3, style = "auto",  options = list(pageLength = 10))
+```
+
 
 
 Exploration
@@ -121,13 +175,21 @@ Some words
 ```
 
 
+
+
 Trend
 =======================================================================
 
+
+
+Row {data-height=400}
+-----------------------------------------------------------------------
 ### External Shiny App via shinyAppDir
 
-Some words
 
+Row {data-height=400}
+-----------------------------------------------------------------------
+### External Shiny App via shinyAppDir
 ```{r}
 
 ```
@@ -136,6 +198,14 @@ Some words
 Geography
 =======================================================================
 
+### External Shiny App via shinyAppDir
+
+Column {data-height=400}
+-----------------------------------------------------------------------
+### External Shiny App via shinyAppDir
+
+Column {data-height=400}
+-----------------------------------------------------------------------
 ### External Shiny App via shinyAppDir
 
 Some words
