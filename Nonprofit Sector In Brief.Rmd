@@ -190,8 +190,11 @@ c_types <-                      cols_only( EIN = col_character(),
                                            CASSETS = col_double(),
                                            NTEEFINAL = col_character())
 
-bmf2019 = read_csv("Data/bmf.bm1908.csv", col_types = c_types)
-bmf2020 = read_csv("Data/bmf.bm2004.csv", col_types = c_types)
+bmf2002 <- read_csv("Data/bmf.bm0207.csv", col_types = c_types)
+bmf2012 <- read_csv("Data/bmf.bm1212.csv", col_types = c_types)
+bmf2017 <- read_csv("Data/bmf.bm1712.csv", col_types = c_types)
+#bmf2019 = read_csv("Data/bmf.bm1908.csv", col_types = c_types)
+#bmf2020 = read_csv("Data/bmf.bm2004.csv", col_types = c_types)
 bmf2022 = read_csv("Data/bmf.bm2201.csv", col_types = c_types)
 ```
 
@@ -204,8 +207,6 @@ inflindex <- read_csv("External_Data/Inflation Index.csv", col_types = "cd", col
 Move to next phase of cleaning 
 
 ```{r}
-
-
 bmfsize <- function(data, year) {
 
       t1 <- data %>% 
@@ -215,23 +216,39 @@ bmfsize <- function(data, year) {
           "All registered nonprofits" = n())
       
       t2 <- data %>% 
-        filter((FNDNCD != "02" & FNDNCD!= "03" & FNDNCD != "04"), (SUBSECCD == "03"|SUBSECCD== "3"), (OUTNCCS != "OUT")) %>%
+        filter((FNDNCD != "02" & FNDNCD!= "03" & FNDNCD != "04"), (SUBSECCD %in% c("03", "3")), (OUTNCCS == "IN")) %>%
         summarize(
           Year = as.character(year),
           "501(c)(3) public charities" = n()
         )
       
+      t3 <- data %>%
+        filter(FNDNCD %in% c("02", "03", "04"), (SUBSECCD %in% c("03", "3")), (OUTNCCS == "IN")) %>%
+        summarize(
+          Year = as.character(year),
+          "501(c)(3) private foundations" = n()
+        )
+      
     combined <- t1 %>%
-      left_join(t2, by = "Year")
+      left_join(t2, by = "Year") %>%
+      left_join(t3, by = "Year")
   
     return(combined)
 }
-
-b1 <- bmfsize(bmf2019, 2019)
-b2 <- bmfsize(bmf2020, 2020)
-b3 <- bmfsize(bmf2022, 2022)
-t <- bind_rows(b1,b2,b3)
 ```
+
+
+
+```{r}
+b1 <- bmfsize(bmf2002, 2002)
+b2 <- bmfsize(bmf2012, 2012)
+b3 <- bmfsize(bmf2017, 2017)
+b4 <- bmfsize(bmf2022, 2022)
+t <- bind_rows(b1,b2,b3, b4)
+
+t
+```
+
 
 ```{r}
 p1 <- t %>%
@@ -362,7 +379,15 @@ table1.data.long <- pc %>%
 ```
 
 ```{r}
-PC_2019_ExpenseGroup <- core2019pc %>% 
+# READ Data
+
+#core2019pc <- read_csv("Data/Output_Data/new_core2019pc.csv") %>%
+#  select(!1)
+```
+
+
+```{r}
+PC2019_ExpenseGroup <- core2019pc %>% 
   filter(((GRREC >= 50000)|(TOTREV>50000)), #filter out organizations below minimum filing threshold for 990-EZ
          (OUTNCCS != "OUT"), 
          !(FNDNCD %in% c("02", "03", "04"))
@@ -387,15 +412,77 @@ PC_2019_ExpenseGroup <- core2019pc %>%
     ) %>%
   rename("Expense Group" = EXPCAT)
   
-PC_2019_ExpenseGroup <- PC_2019_ExpenseGroup %>%
-  relocate(Year, .before = `Expense Group`) 
-  
+PC2019_ExpenseGroup <- PC2019_ExpenseGroup %>%
+  relocate(Year, .before = "Expense Group") 
 ```
+
+```{r}
+PC2019_ExpenseGroup[7, ] <- list("2019", "Total Expense",  1,1,1,1,1, 1,1,1,1,1)
+
+for (i in 3:12) {
+  PC2019_ExpenseGroup[7, i] <- colSums(PC2019_ExpenseGroup[1:6, 3:12])[i-2]
+}
+
+PC2019_ExpenseGroup = PC2019_ExpenseGroup[c(7, 1:6), ]
+
+PC2019_ExpenseGroup
+```
+
+
+```{r}
+PC2019_CategoryGroup <- core2019pc %>% 
+  filter(((GRREC >= 50000)|(TOTREV>50000)), #filter out organizations below minimum filing threshold for 990-EZ
+         (OUTNCCS != "OUT"), 
+         !(FNDNCD %in% c("02", "03", "04"))
+         ) %>% 
+  group_by(NTEEGRP) %>%
+  summarize( 
+      Number = n(),
+      "Total Expenses" = round((sum(EXPS, na.rm =TRUE)/1000000000), digits =2),
+      "Total Assets" = round((sum(ASS_EOY, na.rm =TRUE))/1000000000, digits=2),
+      "Gross Income" = round((sum(GRREC, na.rm =TRUE))/1000000000, digits=2),
+      "Total Revenue" = round((sum(TOTREV, na.rm =TRUE))/1000000000, digits=2)
+    ) %>% 
+    #drop old variables, keep only categories and proportions
+    mutate(
+      Year = as.character(2019),
+      Category = NTEEGRP,
+      Percentage = round(((Number/sum(Number))*100),digits=1),
+      "Total expenses (%)" = round(((`Total Expenses`/sum(`Total Expenses`))*100),digits=1),
+      "Total Assets (%)" = round(((`Total Assets`/sum(`Total Assets`))*100),digits=1),
+      "Gross Income (%)" = round(((`Gross Income`/sum(`Gross Income`))*100),digits=1),
+      "Total Revenue (%)" = round(((`Total Revenue`/sum(`Total Revenue`))*100),digits=1)
+    ) %>%
+ # rename("Expense Group" = EXPCAT) %>%
+  
+  relocate(Year, .before = Number)  %>%
+  relocate(Category, .before = Year) %>%
+  select(!NTEEGRP)
+
+PC2019_CategoryGroup
+```
+
+```{r}
+PC2019_CategoryGroup[11,] = list("All public charities", "2019", 1,1,1,1,1, 1,1,1,1,1)
+
+for (i in 3:12) {
+  PC2019_CategoryGroup[11, i] = colSums(PC2019_CategoryGroup[1:10, 3:12])[i-2]
+}
+
+# rearrange the order of categories
+PC2019_CategoryGroup = PC2019_CategoryGroup[c(11, 1:2, 3, 7, 4, 8, 5, 9:10, 6), ]
+
+#PC2019_CategoryGroup %>% add_row(Category = "All public charities", Year = 2019, #colSums(PC2019_CategoryGroup[1:nrow(PC2019_CategoryGroup), 3:10]))
+
+PC2019_CategoryGroup
+
+```
+
 
 ```{r}
 write.csv(t, "Number_nonprofit_trend.csv") 
 
-write.csv(table1.data, "Nonprofit_finance_2019.csv")
+write.csv(table1.data, "Data/Output_Data/Nonprofit_finance_2019.csv")
 
 write.csv(pc, "Public_charity_2019.csv")
 
@@ -405,7 +492,10 @@ write.csv(co, "other_nonprofit_2019.csv")
 
 write.csv(core2019pc, "new_core2019pc.csv")
 
-write.csv(PC_2019_ExpenseGroup, "Data/Output_Data/PC_2019_by_expense.csv")
+write.csv(PC2019_ExpenseGroup, "Data/Output_Data/PC2019_by_expense.csv")
+
+write.csv(PC2019_CategoryGroup, "Data/Output_Data/PC2019_by_category.csv")
+
 ```
 
 
