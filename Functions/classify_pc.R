@@ -9,9 +9,9 @@
 library(tidyverse)
 library(httr)
 
-classify <- function(data) {
+classify <- function(dataset) {
   
-  nteedocalleins <- read_csv("https://nccs-data.urban.org/dl.php?f=misc/nccs.nteedocAllEins.csv",
+  nteedocalleins <- read_csv("https://nccs-data.urban.org/dl.php?f=misc/classif.alleins.csv",
                              col_types = cols_only(EIN = col_character(),
                                                    NteeFinal = col_character()
                              )) %>% 
@@ -60,6 +60,6 @@ classify <- function(data) {
       exp >= 5000000 & exp < 10000000 ~ "e. $5 million to $9.99 million",
       exp >= 10000000 ~ "f. $10 million or more"))
   
-  return(data)
+  return(dataset)
 }
 
