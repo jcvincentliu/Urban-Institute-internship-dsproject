@@ -34,6 +34,11 @@ library(grid)
 library(gridExtra)
 library(rmarkdown)
 library(plotly)
+library(sf) 
+library(sp)
+library(ggmap)
+library(leaflet)
+#library(highcharter)
 
 set_urbn_defaults()
 ```
@@ -60,24 +65,27 @@ p_trend <- Nonprofit_trend %>%
   geom_point(aes(y = `501(c)(3) public charities`), color = "#99FF33", size = .8) +
   geom_line(aes(y = `501(c)(3) private foundations`), color = "#FF9933") +
   geom_point(aes(y = `501(c)(3) private foundations`), color = "#FF9933", size = .8) +
-  ggtitle("A Tend in Number of 501c(3) Nonprofit", subtitle = "From 2002 to 2022") +
-  labs(x = "Year", y = " ") +
+#  ggtitle("A Tend in Number of 501c(3) Nonprofit", subtitle = "From 2002 to 2022") +
+  labs(x = "", y = "") +
    guides(color = guide_legend(title = " ")) +
   scale_color_discrete(labels = c("All registered nonprofits", "501(c)(3) public charities")) +
-   geom_text(aes(as.factor(Year),`All registered nonprofits` , label= `All registered nonprofits`),
-              vjust= -1, 
-              position = position_dodge(width=1),
-              size =3) +
-   geom_text(aes(as.factor(Year),`501(c)(3) public charities` , label= `501(c)(3) public charities`),
-              vjust=-1, 
-              position = position_dodge(width=1),
-              size =3) +
-    geom_text(aes(as.factor(Year),`501(c)(3) private foundations` , label= `501(c)(3) private foundations`),
-              vjust=-1, 
-              position = position_dodge(width=1),
-              size =3) +
-   ylim(NA, 1600000) +
-   theme(legend.position="right", legend.direction = "vertical")
+   # geom_text(aes(as.factor(Year),`All registered nonprofits` , label= `All registered nonprofits`),
+   #            vjust= -1, 
+   #            position = position_dodge(width=1),
+   #            size =3) +
+   # geom_text(aes(as.factor(Year),`501(c)(3) public charities` , label= `501(c)(3) public charities`),
+   #            vjust=-1, 
+   #            position = position_dodge(width=1),
+   #            size =3) +
+   #  geom_text(aes(as.factor(Year),`501(c)(3) private foundations` , label= `501(c)(3) private foundations`),
+   #            vjust=-1, 
+   #            position = position_dodge(width=1),
+   #            size =3) +
+  # ylim(NA, 1600000) +
+   theme(legend.position="right", legend.direction = "vertical") +
+  theme(axis.line.y = element_blank(),
+        axis.ticks = element_blank()) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1600000), breaks = c(0,100000,  seq(500000, 1500000, 250000)))
 
 p_trend <- p_trend + annotate("text", x = 4.2, y = 1300000, label = "All nonprofit", size = 3.5)
 p_trend <- p_trend + annotate("text", x = 4.2, y = 1000000, label = "Public charity", size = 3.5)
@@ -90,8 +98,11 @@ ggplotly(p_trend)
 ***
 
 - The number of registered nonprofits reached its highest point in 2017 but have been decreasing since then. 
+
 - 501 c(3) Public charities counted for a great percentage of all nonprofits 
+
 - Private foundations changed at a lower magnitude compared to private foundations
+
 - The nonprofit sector is heavily impacted by the domestic economic market
 
 
@@ -103,16 +114,22 @@ $\textbf{Source:}$ IRS Business Master File 2002, 2012, 2017, 2022
 ```{r}
 Finance <- read_csv("Data/Output_Data/Nonprofit_finance_2019.csv") %>%
   select(!1)
+
 p_fin <- Finance %>%
   filter(Type  %in% c("PC", "CO", "PF"), Variable != "Reporting") %>%
   ggplot(aes(x = Variable, y = Value, fill = Type)) +
   geom_col(position = "dodge") +
-  geom_text(aes(Variable, Value, label=Value),
-              vjust=-1.1, 
-              position = position_dodge(width=1),
-              size =3.2) +
-  ylim(NA, 5000) +
-   theme(legend.position="right", legend.direction = "vertical")
+#  geom_text(aes(Variable, Value, label=Value),
+   #           vjust=-.1, 
+ #             position = position_dodge(width=1),
+   #           size =3) +
+  ylim(NA, 5000) + 
+  labs(x = "", y = "")  +
+   theme(legend.position="right", legend.direction = "vertical") +
+  theme(axis.ticks = element_blank(),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank()) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 2500), breaks = c(0, 100, 500, seq(1000, 2000, 1000)))
 
 ggplotly(p_fin)
 ```
@@ -120,121 +137,185 @@ ggplotly(p_fin)
 ***
 
 - In the year of 2019, public charities had the most assets, spend the most, and returned the most revenues among all nonprofits. 
+
 - All nonprofits, on average, were profitable this year, calculated as $\text{Revenue - Expense}$.
+
 - Private foundations were more profitable than public charities, considering private foundations represented a much smaller share than public foundations, whereas, the gaps in expense and revenues (PF is 4ish times smaller than PC) are not as great as the size differences (PF is 10 times smaller than PC)
 
 
 Source: NCCS Core File 2019
+
+### Outside NCCS Scope
+
+```{r}
+inoutnccs <- read_csv("Data/Output_Data/outnccs_19.csv") %>% select(!1)
+```
+
+```{r}
+p_out <- inoutnccs %>%
+  filter(OUTNCCS == "OUT") %>%
+  ggplot(aes(x = reorder(factor(type),n), y= n)) +
+  geom_bar(stat = "identity") +
+  # geom_text(aes(label = n), 
+  #           position= position_dodge(width=1), 
+  #             vjust =-.3,
+  #             size=3) +
+  scale_x_discrete(limits = rev)  +
+  labs(x = "", y = "") +
+  theme(axis.ticks = element_blank()) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 3200), breaks = c(0, 200, seq(1000, 3000, 1000)))
+
+ggplotly(p_out)
+```
+
+***
+
+- Public charity has the most organizations out of NCCS scope.
+
+- Regardless of the type, the proportion of nonprofits outside the scope is very very small that these organizations are neglectable.
 
 
 
 Public Charity in 2019 {.storyboard}
 =======================================================================
 
-### Perspective - In or Outside the NCCS Scope
- 
-```{r, echp =F}
-pc2019 <- read_csv("Data/Output_Data/new_core2019pc.csv") %>% select(!1)
+### Number of PCs by Expense Level
+```{r}
+PC_expense_long <- read_csv("Data/Output_Data/PC2019_by_expense.csv") %>%
+  select(!1)  %>%
+  mutate(Expense_Group2 = case_when(
+      `Expense Group` %in% c("a. Under $100,000", "b. $100,000 to $499,999", "c. $500,000 to $999,999") ~ "Under 1 million",
+      `Expense Group` %in% c("d. $1 million to $4.99 million", "e. $5 million to $9.99 million") ~ "1 million to 10 million",
+      `Expense Group` %in% c("f. $10 million or more") ~ "10 million or more",
+      `Expense Group` %in% c("Total Expense") ~ "Total"
+  )) %>% 
+  pivot_longer(4:7, values_to = "Value", names_to = "Financial_Group")  
 ```
 
 ```{r}
-p_inout <- pc2019 %>% filter(OUTNCCS %in% c("IN", "OUT")) %>% group_by(OUTNCCS) %>% 
-  summarise(Number = n()) %>%
-  ggplot(aes(x = OUTNCCS, y = Number)) +
-  geom_col() +
-  labs(x = NULL, 
-          y = NULL) +
-  geom_text(aes(label = Number), position = position_dodge(width = 0.7), vjust = -1, size = 6) +  
-  theme(
-#  axis.text.x = element_blank(),
-  axis.text.y = element_blank(),
-  axis.ticks = element_blank())
-
-ggplotly(p_inout)
-```
-
-***
-
-- Of 390249 nonprofits, 1198 or 0.31% is outside the NCCS scope. This is a tiny percentage. 
-- The NCCS categorized those out-of-nccs nonprofits into 7 groups in total based on reasons. These 7 groups could be accessed at the `OUTREAS` item on (https://nccs-data.urban.org/dd2.php?close=1&form=Core+2013+PC)
-
-### Perspective - In or Outside the NCCS Scope
-
-```{r}
-
-pc2019_out <- pc2019 %>% filter(OUTNCCS %in% c("OUT")) %>% group_by(OUTNCCS, NTEEGRP) %>% summarise(Number = n()) %>% mutate(NTEEGRP = factor(NTEEGRP)) 
-#pc2019_out <- pc2019_out[c(11, 1:2, 3, 7, 4, 8, 5, 9:10, 6),]
-
-p_outnccs <- pc2019_out %>%
-   filter(is.na(NTEEGRP)==F, NTEEGRP != "Human services") %>% 
-   ggplot(aes(x = Number, y = reorder(NTEEGRP, Number))) +
-   geom_point() +
-     scale_x_continuous(expand = c(0,0), limits = c(40, 220)) +
-  labs(x = NULL, 
-          y = NULL) +
-   geom_segment(aes(x = 0, xend = Number, y = NTEEGRP, yend = NTEEGRP)) + 
- #  scale_y_discrete(limits = rev) +
-   ggtitle("Public Charities Outside the NCCS Scope in 2019", subtitle = "by NTEE groups in 2019") 
-
-#  ggalt::geom_lollipop(point.colour = "steelblue", point.size = 2, horizontal = T) +
-
-ggplotly(p_outnccs)
-```
-
-***
-
-The top four NTEE groups that have out-of-scope nonprofits are:
-
-* Other public and social benefits
-* Other education
-* Other healthcare
-* Arts
-
-
-### Perspective - Expense Level
-```{r}
-PC_expense <- read_csv("Data/Output_Data/PC2019_by_expense.csv") %>%
+pc2019 <- read_csv("Data/core2019pc.csv") %>%
   select(!1)
+```
 
-PC_expense_long <- PC_expense  %>%
-  pivot_longer(4:7, values_to = "Value", names_to = "Financial_Group") 
+```{r}
+ggplotly(
+  pc2019 %>%
+    mutate(EXPCAT = factor(EXPCAT)) %>%
+    group_by(EXPCAT) %>%
+    summarise(n = n()) %>%
+    
+    ggplot(aes(x = EXPCAT, y = n)) +
+    geom_bar(stat = "identity") +
+ # geom_text(aes(label = n), 
+     #       position= position_dodge(width=1), 
+       #       hjust = .3, size=3) +
+  scale_x_discrete(labels = c("Under 100,000", "100,000 - 499,999", "500,000 - 999,999", "1 - 4.9 million", "5 - 9.9 million", "10 million or more")) +
+  #  scale_x_discrete(labels = function(type) stringr::str_wrap(type, width=10)) +
+#  scale_x_discrete(limits = rev)  +
+#  ylim(NA, 250000) +
+  labs(x = "", y = "") +
+  theme(#axis.text.x = element_blank(),
+         axis.ticks = element_blank(),
+          axis.line.y = element_blank(),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          #panel.grid.major.x = element_line(color = "gray60", size = 0.8, linetype = "dashed")
+          ) + 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 210000), breaks = c(0, 25000, seq(50000, 200000, 50000))) #+
+ #  coord_flip()
+)
 
+```
+
+### PC Financial Informaiton by by Expense Level
+```{r, echo=FALSE}
 p_expense <- PC_expense_long %>%
-  filter(Financial_Group %in% c("Total Expenses", "Gross Income")) %>%
-  ggplot(aes(x = `Expense Group`, y = Value, fill = Financial_Group)) +
+  filter(Financial_Group %in% c("Total Assets", "Total Revenue")) %>%
+  ggplot(aes(x = reorder(factor(Expense_Group2), Value), y = Value, fill = Financial_Group)) +
   geom_col(position = "dodge") + 
-  coord_flip() +
   labs(x = NULL, 
-       y = NULL)
-p_expense
+       y = NULL) +
+ # geom_text(aes(label = Value),
+ #             position= position_dodge(width=1), vjust =-.1, size=3) +
+   theme(axis.ticks = element_blank()) +
+   scale_y_continuous(expand = c(0, 0), limits = c(0, 5000), breaks = c(0, 200, seq(1000, 4000, 1000))) +
+   theme(legend.position="right", legend.direction = "vertical") 
+ 
+
+ggplotly(p_expense) %>% layout(legend = list(orientation = "h", x = 0.15, y = -0.1))
 ```
 
 ***
 
+- Organizations who spent 10 million or more also earned significantly more than public charities who made fewer than 10 million.
 
 
+### Number of PCs by Category
 
-### Perspective - Category Group
+```{r}
+ggplotly(
+  pc2019 %>%
+    mutate(NTEEGRP = factor(NTEEGRP)) %>%
+    group_by(NTEEGRP) %>%
+    summarise(n = n()) %>%
+    
+    ggplot(aes(x = reorder(NTEEGRP,n), y = n)) +
+    geom_bar(stat = "identity") +
+#  geom_text(aes(label = n), 
+ #           position= position_dodge(width=1), 
+  #            hjust = 3,
+  #            size=3) +
+#  scale_x_discrete(limits = rev)  +
+  labs(x = "", y = "") +
+  theme(#axis.text.x = element_blank(),
+          axis.line = element_blank(),
+          axis.ticks.y = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.x = element_line(color = "gray60", size = 0.8, linetype = "dashed")
+          ) + 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 150000), breaks = c(0, 10000, seq(25000, 125000, 25000))) +
+   coord_flip()
+)
+
+```
+
+***
+
+- Human services and other public/social services are the absolute majorities here.
+
+
+### PC Finance Information by Category
 ```{r}
 PC_category <- read_csv("Data/Output_Data/PC2019_by_category.csv") %>%
   select(!1)
 
 PC_category_long <- PC_category %>%
   pivot_longer(4:7, values_to = "Value", names_to = "NTEE_Group") %>%
- filter(NTEE_Group %in% c("Total Expenses", "Gross Income")) %>%
   select(Category, NTEE_Group, Value)
 
-
 p_category <- PC_category_long %>%
-  ggplot(aes(x = Category, y = Value, fill = NTEE_Group)) +
-  geom_col(position = "dodge") + 
-  coord_flip() +
+  filter(NTEE_Group %in% c("Total Expenses", "Total Revenue")) %>% 
+  ggplot(aes(x = reorder(Category, Value), y = Value, fill = NTEE_Group)) +
+  geom_bar(position = "dodge", stat = "identity") + 
   labs(x = NULL, 
-       y = NULL) 
-  #scale_y_discrete(limits = rev)
+       y = NULL) +
+  coord_flip() +
+ # geom_vline(xintercept = seq(0, 3000, 500), linetype="dotted") +
+#  geom_text(data = PC_category_long %>% mutate(Category = reorder(Category, Value)) %>% #slice(1:2, 7:12, 13:18), aes(label = formatC(round(Value,2), format = 'f', digits =2)),
+#              position= position_dodge(width=1), hjust =-.1, size=3) + 
+  theme( panel.grid.major.x = element_line(color = "gray60", size = 0.8, linetype = "dashed") ) +
+   scale_y_continuous(expand = c(0, 0), limits = c(0, 2600), breaks = c(0,100, 250, seq(500, 2500, 500)))  +
+ theme(
+   axis.line.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+#    panel.grid.minor.y = element_blank()
+  ) +
+   theme(legend.position="right", legend.direction = "vertical")
+#  scale_x_discrete(limits = rev) 
+     
 
-p_category
-#ggplotly(p_category)
+ggplotly(p_category) %>% layout(legend = list(orientation = "h", x = 0.15, y = -0.1))
 ```
 
 ***
@@ -244,55 +325,308 @@ p_category
 
 
 
-
-Private Foundation {.storyboard}
+Private Foundation in 2019 {.storyboard}
 =======================================================================
 
-### Inline Shiny App via shinyApp
-
-Some words
+### Number of PFs by State
 
 ```{r, include=F}
-# shinyApp(
-#   ui = fillPage(
-#     fillCol(flex = c(NA, 1), 
-#       inputPanel(
-#         selectInput("region", "Region:", choices = colnames(WorldPhones))
-#       ),
-#       plotOutput("phonePlot", height = "100%")
-#     )
-#   ),
-#   server = function(input, output) {
-#     output$phonePlot <- renderPlot({
-#       barplot(WorldPhones[,input$region]*1000, 
-#               ylab = "Number of Telephones", xlab = "Year")
-#     })
-#   },
-#   options = list(height = 600)
-# )
+
+pf19_state <- read_csv("Data/Output_Data/PF2019_by_state.csv") %>%
+  select(!1)
 ```
-
-
-
-
-
-Geography
-=======================================================================
-
-Column {data-height=400}
------------------------------------------------------------------------
-### External Shiny App via shinyAppDir
-
-Column {data-height=400}
------------------------------------------------------------------------
-### External Shiny App via shinyAppDir
-
-Some words
 
 ```{r}
-# shinyAppDir(
-#   system.file("examples/06_tabsets", package="shiny"),
-#   options = list(height=850)
-# )
+p_state_size <-
+  pf19_state %>%
+    mutate(STATE = factor(STATE)) %>%
+    mutate(STATE = reorder(STATE, Number)) %>%
+    arrange(-Number) %>%
+    head(20) %>%
+    ggplot(aes(y = Number, x = STATE))+
+    geom_bar(stat="identity", width = .8) +
+    labs(x = "", y = "") +
+    theme(#axis.text.x = element_blank(),
+        # axis.ticks.x = element_blank(),
+          axis.line.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.x = element_line(color = "gray60", size = 0.8, linetype = "dashed")
+          ) + 
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 9000), 
+                       breaks = c(0, 1000, seq(2000, 8000, 1000)))  +
+   coord_flip() 
+#    geom_text(aes(label = Number),
+      #        position= position_dodge(width=1), hjust =-.2, size=3)
+#p_state_size
+ggplotly(p_state_size)
 ```
+
+***
+
+- NY, CA, and FL have the most private foundation-type nonprofits.
+
+### PF Finance Information by State
+
+```{r}
+ggplotly(
+  pf19_state %>%
+    mutate(STATE = factor(STATE)) %>%
+    mutate(STATE = reorder(STATE, Number)) %>%
+    arrange(-Number) %>%
+    head(5) %>%
+    select(!c(2,4)) %>%
+    pivot_longer(2:3, values_to = "Amount", names_to = "Finance") %>%
+    ggplot(aes(y = Amount, x = STATE, fill = Finance))+
+    geom_bar(position = "dodge", stat="identity", width = .9) +
+    labs(x = "", y = "") +
+    theme(#axis.text.y = element_blank(),
+          axis.ticks.x = element_blank(),
+       #  axis.ticks.y = element_blank(),
+     #     panel.grid.major.y = element_blank(),
+         # panel.grid.minor.y = element_blank(),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank()
+          ) + 
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 16), 
+                       breaks = c(0,2,5,10,15))  +
+  #  geom_text(aes(label = Amount),
+   #           position= position_dodge(width=1), vjust =-.1, size=3) +
+   scale_x_discrete(limits = rev)  +
+    theme(legend.position="right", legend.direction = "vertical") 
+ 
+)  %>%
+   layout(legend = list(orientation = "h", x = 0.12, y = -0.1))
+
+
+```
+
+***
+
+- CA-based Private Foundations gained more total revenues than NY, despite the latter has more organizations than the former
+
+- PFs based in CA and NY exceed than their counterparts in other states on both total expense and total revenue
+
+
+### Number of PFs by Category
+
+```{r}
+pf19_category <- read_csv("Data/Output_Data/PF2019_by_category.csv") %>%
+  select(!1)
+
+ggplotly(
+  pf19_category %>%
+    mutate(NTEEGRP = factor(NTEEGRP)) %>%
+    mutate(NTEEGRP = reorder(NTEEGRP, Number)) %>%
+  #  arrange(-Number) %>%
+ #   head(25) %>%
+    ggplot(aes(y = Number, x = NTEEGRP))+
+    geom_bar(stat="identity", width = .9) +
+    labs(x = "", y = "") +
+    theme(#axis.text.x = element_blank(),
+        # axis.ticks.x = element_blank(),
+          axis.line = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.x = element_line(color = "gray60", size = 0.8, linetype = "dashed")
+          ) + 
+   coord_flip() +
+   scale_y_continuous(expand = c(0, 0), limits = c(0, 60000), 
+                       breaks = c(0, 1000, 5000, 10000, 50000)) # +
+   # geom_text(aes(label = formatC(Number, format = 'f', digits =2)),
+   #           position= position_dodge(width=1), hjust =-.2, size=3)
+)
+```
+
+***
+
+- There are an incredible amount of PFs under category "Other social and health benefits"
+
+
+
+### PF Finance Information by Category
+
+```{r}
+
+p19_category  <- pf19_category %>%
+ #   mutate(NTEEGRP = factor(NTEEGRP)) %>%
+    mutate(NTEEGRP = reorder(factor(NTEEGRP), Number)) %>%
+    filter(NTEEGRP != "Other public and social benefit") %>%
+    select(!c(2,4)) %>%
+    pivot_longer(2:3, values_to = "Amount", names_to = "Finance") %>%
+    ggplot(aes(y = Amount, x = NTEEGRP, fill = Finance))+
+    geom_bar(position = "dodge", stat="identity", width = .9) +
+    labs(x = "", y = "") +
+    theme(
+          axis.line = element_blank(),
+     #   axis.text.x = element_blank(),
+      #   axis.ticks.y = element_blank(),
+         axis.ticks.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.x = element_line(color = "gray60", size = 0.8, 
+                                            linetype = "dashed")
+       #   panel.grid.major.x = element_blank(),
+     #     panel.grid.minor.x = element_blank()
+          ) + 
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 6), 
+                       breaks = c(0, 0.5, seq(1,6,1)))  +
+   coord_flip() +
+ #   geom_text(aes(label = Amount),
+   #          position= position_dodge(width=1), hjust =-.1, size=3) +
+  # scale_x_discrete(limits = rev)  +
+    theme(legend.position="right", legend.direction = "vertical")
+  
+#%>%
+  # layout(legend = list(orientation = "h", x = 0.15, y = -0.1))
+
+ggplotly(p19_category)
+```
+
+*** 
+
+- Category "Other public and social benefits" are excluded due to its extraordinarily large number
+
+
+Nonprofit Density Map in 2019
+=======================================================================
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### All 501c(3) Nonprofits 
+
+```{r, echo=FALSE}
+size_map <- geojsonio::geojson_read("Data/Output_Data/nonprofit2019_size_map.geojson", what = "sp")
+
+pal <- colorBin("RdPu", domain = size_map$count, bins = c(0, 9680, 17300, 33400, 47100, 180000)) 
+
+labels <- sprintf(
+  "<strong>%s</strong><br/> Number of Nonprofits: %1.0f <br/> State Population in 2015: %1.0f",
+ size_map$name, size_map$count, size_map$pop_2015
+) %>% lapply(htmltools::HTML)
+```
+
+```{r}
+leaflet(size_map) %>%
+  setView(-96, 37.8, 4) %>%
+  addProviderTiles("MapBox", options = providerTileOptions(
+    id = "mapbox.light",
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN'))) %>%
+  addPolygons(
+    fillColor = ~pal(count),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto")) %>%
+  addLegend(pal = pal, values = ~count, opacity = 0.7, title = "501c(3) Nonprofits in 2019",
+    position = "bottomright")
+```
+
+
+Column {.tabset data-width=500}
+-----------------------------------------------------------------------
+
+### Public Charity  
+
+```{r}
+pc19_size_map <- geojsonio::geojson_read("Data/Output_Data/pc_nonprofit2019_size_map.geojson", what = "sp")
+
+pc_pal <- colorBin("BuGn", domain = pc19_size_map$count, bins = c(0, 2340, 4460, 7830, 12200, 53000)) 
+
+pc_labels <- sprintf(
+  "<strong>%s</strong><br/> Number of Nonprofits: %1.0f <br/> State Population in 2015: %1.0f",
+ pc19_size_map$name, pc19_size_map$count, pc19_size_map$pop_2015
+) %>% lapply(htmltools::HTML)
+```
+
+```{r}
+leaflet(pc19_size_map) %>%
+  setView(-96, 37.8, 4) %>%
+  addProviderTiles("MapBox", options = providerTileOptions(
+    id = "mapbox.light",
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN'))) %>%
+  addPolygons(
+    fillColor = ~pc_pal(count),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE),
+    label = pc_labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto")) %>%
+  addLegend(pal = pc_pal, values = ~count, opacity = 0.7, title = "Public Charity in 2019",
+    position = "bottomright")
+```
+
+### Private Foundation 
+
+```{r}
+pf19_size_map <- geojsonio::geojson_read("Data/Output_Data/pf_nonprofit2019_size_map.geojson", what = "sp")
+
+pf_pal <- colorBin("BuPu", domain = pf19_size_map$count, bins = c(0, 312, 633, 1100, 1850, 8400)) 
+
+pf_labels <- sprintf(
+  "<strong>%s</strong><br/> Number of Nonprofits: %1.0f <br/> State Population in 2015: %1.0f",
+ pf19_size_map$name, pf19_size_map$count, pf19_size_map$pop_2015
+) %>% lapply(htmltools::HTML)
+```
+
+```{r}
+leaflet(pf19_size_map) %>%
+  setView(-96, 37.8, 4) %>%
+  addProviderTiles("MapBox", options = providerTileOptions(
+    id = "mapbox.light",
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN'))) %>%
+  addPolygons(
+    fillColor = ~pf_pal(count),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE),
+    label = pf_labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto")) %>%
+  addLegend(pal = pf_pal, values = ~count, opacity = 0.7, title = "Private Foundation in 2019",
+    position = "bottomright")
+```
+
+
+
+
+
+
+
+
+
 
