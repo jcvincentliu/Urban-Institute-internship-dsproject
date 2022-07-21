@@ -534,7 +534,12 @@ PC2019_CategoryGroup
 ```
 
 ```{r}
-PC2019_CategoryGroup %>% select(-c(Year, Percentage:`Total Revenue (%)`)) %>% rename(Count = Number) %>% relocate(`Total Expenses`, .before = `Gross Income`) %>% datatable(rownames = FALSE,  options = list(dom='Bfrtip',autoWidth = TRUE, pageLength=15, buttons=c('print', 'csv', 'pdf')), class = 'hover') # either class = "style" (default) or class = "hover" (current)
+PC2019_CategoryGroup %>% 
+  select(-c(Year, Percentage:`Total Revenue (%)`)) %>% 
+  rename(Count = Number) %>% 
+  relocate(`Total Expenses`, .before = `Gross Income`) %>% 
+  
+  datatable(rownames = FALSE,  options = list(dom='Bfrtip',autoWidth = TRUE, pageLength=15, buttons=c('print', 'csv', 'pdf')), class = 'hover') # either class = "style" (default) or class = "hover" (current)
 
 ```
 

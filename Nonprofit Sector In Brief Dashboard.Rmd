@@ -1,11 +1,10 @@
 ---
 title: "Nonprofit Sector In Brief Dashboard"
-date: "`r lubridate::today()`"
 output: 
   flexdashboard::flex_dashboard:
     social: menu
     source_code: embed
-    theme: cosmo
+    theme: cerulean
 ---
 
 ```{r setup, include=FALSE}
@@ -92,7 +91,7 @@ p_trend <- p_trend + annotate("text", x = 4.2, y = 1000000, label = "Public char
 p_trend <- p_trend + annotate("text", x = 4.2, y = 150000, label = "Private foundation", size = 3.5)
 
 
-ggplotly(p_trend)
+ggplotly(p_trend) %>% layout(hoverlabel = list(bgcolor = "white"))
 ```
 
 ***
@@ -131,7 +130,7 @@ p_fin <- Finance %>%
           panel.grid.minor.x = element_blank()) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 2500), breaks = c(0, 100, 500, seq(1000, 2000, 1000)))
 
-ggplotly(p_fin)
+ggplotly(p_fin) %>% layout(hoverlabel = list(bgcolor = "white"))
 ```
 
 ***
@@ -155,7 +154,7 @@ inoutnccs <- read_csv("Data/Output_Data/outnccs_19.csv") %>% select(!1)
 p_out <- inoutnccs %>%
   filter(OUTNCCS == "OUT") %>%
   ggplot(aes(x = reorder(factor(type),n), y= n)) +
-  geom_bar(stat = "identity") +
+  geom_bar(stat = "identity", fill = "skyblue1") +
   # geom_text(aes(label = n), 
   #           position= position_dodge(width=1), 
   #             vjust =-.3,
@@ -165,7 +164,7 @@ p_out <- inoutnccs %>%
   theme(axis.ticks = element_blank()) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 3200), breaks = c(0, 200, seq(1000, 3000, 1000)))
 
-ggplotly(p_out)
+ggplotly(p_out) %>% layout(hoverlabel = list(bgcolor = "white"))
 ```
 
 ***
@@ -205,7 +204,7 @@ ggplotly(
     summarise(n = n()) %>%
     
     ggplot(aes(x = EXPCAT, y = n)) +
-    geom_bar(stat = "identity") +
+    geom_bar(stat = "identity", fill = "cadetblue2") +
  # geom_text(aes(label = n), 
      #       position= position_dodge(width=1), 
        #       hjust = .3, size=3) +
@@ -223,9 +222,15 @@ ggplotly(
           ) + 
   scale_y_continuous(expand = c(0, 0), limits = c(0, 210000), breaks = c(0, 25000, seq(50000, 200000, 50000))) #+
  #  coord_flip()
-)
+) %>% layout(hoverlabel = list(bgcolor = "white"))
 
 ```
+***
+
+- Most PC organizations fell under the low-spending end of the spectrum
+
+- The distribution is highly right-skewed
+
 
 ### PC Financial Informaiton by by Expense Level
 ```{r, echo=FALSE}
@@ -242,7 +247,7 @@ p_expense <- PC_expense_long %>%
    theme(legend.position="right", legend.direction = "vertical") 
  
 
-ggplotly(p_expense) %>% layout(legend = list(orientation = "h", x = 0.15, y = -0.1))
+ggplotly(p_expense) %>% layout(legend = list(orientation = "h", x = 0.15, y = -0.1), hoverlabel = list(bgcolor = "white")) 
 ```
 
 ***
@@ -260,7 +265,7 @@ ggplotly(
     summarise(n = n()) %>%
     
     ggplot(aes(x = reorder(NTEEGRP,n), y = n)) +
-    geom_bar(stat = "identity") +
+    geom_bar(stat = "identity", fill = "lightskyblue2") +
 #  geom_text(aes(label = n), 
  #           position= position_dodge(width=1), 
   #            hjust = 3,
@@ -276,7 +281,7 @@ ggplotly(
           ) + 
   scale_y_continuous(expand = c(0, 0), limits = c(0, 150000), breaks = c(0, 10000, seq(25000, 125000, 25000))) +
    coord_flip()
-)
+) %>% layout(hoverlabel = list(bgcolor = "white"))
 
 ```
 
@@ -315,7 +320,7 @@ p_category <- PC_category_long %>%
 #  scale_x_discrete(limits = rev) 
      
 
-ggplotly(p_category) %>% layout(legend = list(orientation = "h", x = 0.15, y = -0.1))
+ggplotly(p_category) %>% layout(legend = list(orientation = "h", x = 0.15, y = -0.1), hoverlabel = list(bgcolor = "white")) 
 ```
 
 ***
@@ -344,7 +349,7 @@ p_state_size <-
     arrange(-Number) %>%
     head(20) %>%
     ggplot(aes(y = Number, x = STATE))+
-    geom_bar(stat="identity", width = .8) +
+    geom_bar(stat="identity", width = .8, fill="lightgreen") +
     labs(x = "", y = "") +
     theme(#axis.text.x = element_blank(),
         # axis.ticks.x = element_blank(),
@@ -359,7 +364,7 @@ p_state_size <-
 #    geom_text(aes(label = Number),
       #        position= position_dodge(width=1), hjust =-.2, size=3)
 #p_state_size
-ggplotly(p_state_size)
+ggplotly(p_state_size) %>% layout(hoverlabel = list(bgcolor = "white"))
 ```
 
 ***
@@ -396,7 +401,7 @@ ggplotly(
     theme(legend.position="right", legend.direction = "vertical") 
  
 )  %>%
-   layout(legend = list(orientation = "h", x = 0.12, y = -0.1))
+   layout(legend = list(orientation = "h", x = 0.12, y = -0.1), hoverlabel = list(bgcolor = "white"))
 
 
 ```
@@ -421,7 +426,7 @@ ggplotly(
   #  arrange(-Number) %>%
  #   head(25) %>%
     ggplot(aes(y = Number, x = NTEEGRP))+
-    geom_bar(stat="identity", width = .9) +
+    geom_bar(stat="identity", width = .9, fill ="palegreen3") +
     labs(x = "", y = "") +
     theme(#axis.text.x = element_blank(),
         # axis.ticks.x = element_blank(),
@@ -435,7 +440,7 @@ ggplotly(
                        breaks = c(0, 1000, 5000, 10000, 50000)) # +
    # geom_text(aes(label = formatC(Number, format = 'f', digits =2)),
    #           position= position_dodge(width=1), hjust =-.2, size=3)
-)
+) %>% layout(hoverlabel = list(bgcolor = "white"))
 ```
 
 ***
@@ -480,7 +485,7 @@ p19_category  <- pf19_category %>%
 #%>%
   # layout(legend = list(orientation = "h", x = 0.15, y = -0.1))
 
-ggplotly(p19_category)
+ggplotly(p19_category) %>% layout(hoverlabel = list(bgcolor = "white"))
 ```
 
 *** 
@@ -488,13 +493,157 @@ ggplotly(p19_category)
 - Category "Other public and social benefits" are excluded due to its extraordinarily large number
 
 
-Nonprofit Density Map in 2019
+Volunteering and Giving
+=======================================================================
+
+Column {.tabset data-width=500}
+-----------------------------------------------------------------------
+
+### Volunteer Activities 
+```{r}
+volunteer_act <- read_csv("Data/External_Data/NSiB_Figure4_Table.csv") %>%
+  select(!1)
+```
+
+```{r}
+ggplotly(
+volunteer_act %>%
+    filter(type != "Total") %>%
+    #filter(type != "Security procedures") %>% #Filtered out because equals 0%
+    ggplot(aes(x=reorder(type, -AsPct), y =AsPct)) +
+    geom_bar(stat = "identity", fill = "#BF87B3") +
+
+    scale_y_continuous(expand = c(0, 0), limits = c(0,30)) +
+    labs(y = "Percent of total volunteer time") +
+  theme(#axis.text.y = element_blank(),
+          axis.title = element_blank(),
+          axis.ticks.x = element_blank(),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank()
+          ) + 
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 26), 
+                       breaks = c(0,1,5,10,20, 25))  +
+    scale_x_discrete(labels = function(type) str_wrap(type, width=10))
+) %>% layout(hoverlabel = list(bgcolor = "white"))
+```
+
+### Value of Volunteering
+```{r}
+volunteer_val <- read_csv("Data/External_Data/Volunteering Data.csv")
+names(volunteer_val)[1] = ""
+
+for (i in 1:15) {   # change NA to ""
+  for (j in 2:11) {
+    if (i %in% c(1, 7, 11)) {
+      volunteer_val[i,j] <- ""
+    }
+  }
+} 
+
+#reactable::reactable(volunteer_val)
+#datatable(volunteer_val, extensions = c('FixedHeader'),rownames = FALSE , 
+#          options = list(dom='Bfrtip',autoWidth = TRUE, pageLength=15, buttons=c('print', #'csv', 'pdf'), fixedHeader =TRUE)) %>%
+#formatStyle(NA,  color = 'black', fontWeight = 'bold')
+
+kable(volunteer_val,  
+      "html", 
+      format.args = list(decimal.mark = '.', big.mark = ","),
+      align = "lcccccccccc",
+      col.names = c("", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017")) %>%
+  kable_styling("hover", full_width = F) %>%
+  row_spec(c(1,7,11), bold = T, hline_after = T ) 
+```
+
+
+Column {.tabset data-width=500}
+-----------------------------------------------------------------------
+### Giving Amount
+
+```{r}
+giving <- read_csv("Data/External_Data/NSiB_Figure2_Table.csv") %>%
+  select(!1)
+```
+
+```{r}
+ggplotly(
+  giving %>%
+    filter(Year >2008) %>%
+    ggplot(aes(x=Year, y =value, fill = Contributions)) +
+    geom_bar(position = "dodge", stat = "identity") +
+    scale_y_continuous(expand = c(0, 0), limits = c(0,460), breaks = seq(200,450,50)) +
+    scale_x_continuous(breaks = 2008:2018)+
+    theme(axis.line = element_blank(),
+     #   axis.text.x = element_blank(),
+      #   axis.ticks.y = element_blank(),
+          axis.ticks.x = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.x = element_line(color = "gray60", size = 0.8, 
+                                            linetype = "dashed")
+          ) +
+    labs(x = "",
+         y = "") +
+    coord_flip() #+
+ #   theme(legend.position="right", legend.direction = "vertical")
+)  %>% 
+  layout(legend = list(orientation = "h", x = 0.12, y = -0.1), 
+         hoverlabel = list(bgcolor = "white"))
+```
+
+### Giving by Charity Type
+```{r}
+giving_charity <- read_csv("Data/External_Data/NSiB_Table5.csv", locale=locale(encoding="latin1")) %>%
+  select(!1)
+names(giving_charity)[4] <- "%point changes"
+
+giving_charity[3,4] = 0.2
+giving_charity[5,4] = 0.3
+giving_charity[7,4] = 0.3
+
+```
+
+```{r}
+datatable(giving_charity, extensions = c('FixedHeader'),rownames = FALSE , 
+          options = list(dom='Bfrtip',autoWidth = TRUE, pageLength=15, 
+                         buttons=c('print', 'csv', 'pdf'), fixedHeader =TRUE))
+```
+
+
+### Total Grants 
+```{r}
+grant <- read_csv("Data/External_Data/NSiB_Figure3_Table.csv") %>%
+  select(!1) 
+```
+
+```{r}
+ggplotly(
+  grant %>%  
+    ggplot(aes(x=Year, y = Constant_Grants)) +
+        geom_bar(stat = "identity", fill = "indianred") +
+        scale_y_continuous(expand = c(0, 0), limits = c(0,85),
+                          breaks = c(0, 40, 50, 60, 70, 80)) +
+        scale_x_continuous(breaks = 2005:2017)+
+        labs(#caption = "The Foundation Center, Foundation Stats (2019)",
+             x = "Year",
+             y = "Grants made (billions)" ) +
+    labs(x = "") +
+     theme(#axis.text.y = element_blank(),
+         # axis.line = element_blank(),
+          axis.ticks.x = element_blank(),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank()
+          ) 
+) %>% 
+  layout(hoverlabel = list(bgcolor = "white"))
+```
+
+Density Map 
 =======================================================================
 
 Column {data-width=500}
 -----------------------------------------------------------------------
 
-### All 501c(3) Nonprofits 
+### 2019 All 501c(3) Nonprofits 
 
 ```{r, echo=FALSE}
 size_map <- geojsonio::geojson_read("Data/Output_Data/nonprofit2019_size_map.geojson", what = "sp")
@@ -539,7 +688,7 @@ leaflet(size_map) %>%
 Column {.tabset data-width=500}
 -----------------------------------------------------------------------
 
-### Public Charity  
+### 2019 Public Charities   
 
 ```{r}
 pc19_size_map <- geojsonio::geojson_read("Data/Output_Data/pc_nonprofit2019_size_map.geojson", what = "sp")
@@ -580,7 +729,7 @@ leaflet(pc19_size_map) %>%
     position = "bottomright")
 ```
 
-### Private Foundation 
+### 2019 Private Foundations 
 
 ```{r}
 pf19_size_map <- geojsonio::geojson_read("Data/Output_Data/pf_nonprofit2019_size_map.geojson", what = "sp")
