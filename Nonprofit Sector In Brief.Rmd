@@ -534,6 +534,9 @@ PC2019_CategoryGroup
 ```
 
 ```{r}
+PC2019_CategoryGroup <- read_csv("Data/Output_Data/PC2019_by_category.csv") %>%
+  select(!1)
+
 PC2019_CategoryGroup %>% 
   select(-c(Year, Percentage:`Total Revenue (%)`)) %>% 
   rename(Count = Number) %>% 
