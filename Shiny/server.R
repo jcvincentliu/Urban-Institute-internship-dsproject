@@ -8,19 +8,29 @@
 #
 
 library(shiny)
+library(shinyWidgets)
+library(DT)
+library(tidyverse)
+
+setwd("Shiny")
+getwd()
+
+pc19_category_num <- readRDS("R Data/pc19_category_number.rds")
+pc19_category_percent <- readRDS("R Data/pc19_category_percent.rds")
+
 
 # Define server logic required to draw a histogram
-shinyServer(function(input, output) {
-
-    output$distPlot <- renderPlot({
-
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white')
-
-    })
-
-})
+shinyServer(function(input, output) { 
+    if (input$Format == "Number") {
+    pc19catgeory =  pc19_category_num
+    
+    } else if (input$Format == "Format") {
+      pc19category =  pc19_category_percent
+    }
+  
+  output$pctable19 =  renderDT(pc19catgeory,
+                               rownames=FALSE, 
+                               options = list(
+                                 autoWidth = TRUE, pageLength=10, buttons=c('print', 'csv', 'pdf')))
+  }
+)
