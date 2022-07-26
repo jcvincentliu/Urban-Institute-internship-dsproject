@@ -12,8 +12,8 @@ library(shinyWidgets)
 library(DT)
 library(tidyverse)
 
-setwd("Shiny")
-getwd()
+#setwd("Shiny")
+#getwd()
 
 pc19_category_num <- readRDS("R Data/pc19_category_number.rds")
 pc19_category_percent <- readRDS("R Data/pc19_category_percent.rds")
@@ -21,10 +21,10 @@ pc19_category_percent <- readRDS("R Data/pc19_category_percent.rds")
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) { 
-    if (input$Format == "Number") {
+    if (reactive(input$Format) == "Number") {
     pc19catgeory =  pc19_category_num
     
-    } else if (input$Format == "Format") {
+    } else if (reactive(input$Format) == "Format") {
       pc19category =  pc19_category_percent
     }
   

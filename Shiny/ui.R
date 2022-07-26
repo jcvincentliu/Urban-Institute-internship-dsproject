@@ -42,21 +42,24 @@ navbarPage("Nonprofit Sector In Brief Dashboard",
                             #              selected = 2019, multiple = FALSE)),
                             
                             pickerInput(inputId = "Year", 
-                                        label = "Year", 
+                                        label = "Select IRS Filing Year", 
                                         choices = c("2019", "2018", "2017", "2016", "2015", "2014", 
                                                        "2013", "2012", "2011", "2010", "2009"), 
                                         selected = c("2019"), 
                                         multiple = FALSE),
                             
                              pickerInput(inputId = "Format", 
-                                         labels = "Format", 
+                                         label = "Select Format", 
                                          choices = c("Number", "Percentage"),
                                          selected = c("Number"), 
                                          multiple=FALSE)
-                                )
-                            ),
-                            mainPanel(DTOutput('pctable19')) 
-             )
+                                ), # end sidebarPanel
+                        
+                        mainPanel(DTOutput('pctable19'))
+                        
+                            ), # end sidebarLayout
+       
+            )
       )
   )
 )
