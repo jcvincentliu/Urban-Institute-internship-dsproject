@@ -1,0 +1,724 @@
+---
+title: "Old Code & New look"
+author: "Vincent Liu"
+date: '2022-06-24'
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      eval = TRUE,
+                      warning = FALSE)
+```
+
+## Set-up
+```{r}
+library(httr)
+library(tidyverse)
+library(stringr)
+library(RCurl)
+library(reshape2)
+library(RColorBrewer)
+library(extrafont)
+library(knitr)
+library(foreign)
+library(kableExtra)
+library(urbnthemes)
+library(grid)
+library(gridExtra)
+library(rmarkdown)
+library(plotly)
+library(leaflet)
+
+set_urbn_defaults()
+```
+
+
+```{r}
+#source("NCCS_Code/Prep NCCS Core File.R")
+source("../Functions/classify.R")
+source("../Functions/Process NCCS Core Files.R")
+```
+
+```{r}
+core2019pf <- process_corefile(2019, "PF")
+core2019co <- process_corefile(2019, "CO")
+core2019pc <- process_corefile(2019, "PC")
+
+core2019pc <- classify(core2019pc, "pc")
+core2019pf <- classify(core2019pf, "pf")
+
+```
+
+
+## Clean and Wrangle Data
+
+### NCCS Core
+```{r}
+processcorefile <- function(year, type) {
+  filepath = paste0("../Data/coreco.core", year, type, ".csv")
+
+  if (type %in% c("pc", "co") ) {
+    
+    colspec = cols_only(EIN = col_character(),
+                        OUTNCCS = col_character(),
+                        SUBSECCD = col_character(),
+                        FNDNCD = col_character(), 
+                        TOTREV = col_double(), # Total Revenue
+                        EXPS = col_double(), # Total Expenditure
+                        ASS_EOY = col_double(), # Total Assets at the end of year
+                        GRREC = col_double(), # Gross Income
+                        
+                        NAME = col_character(), 
+                        CITY = col_character(),
+                        STATE = col_character(),
+                        PMSA = col_character(),
+                        MSA_NECH = col_character(),
+                        ZIP5 = col_character(),
+                        LONGITUDE = col_double(),
+                        LATITUDE = col_double())
+    
+  } else if (type == "pf") {
+    
+    colspec = 
+            cols_only(EIN = col_character(), # Employer Identification number
+                OUTNCCS = col_character(),  # Outside NCCS Scope?
+                SUBSECCD = col_character(), # Subsection Code
+                FNDNCD = col_character(), # Reason for 501(c)(3) status
+                NTMAJ12 = col_character(), # 
+                P1TOTREV = col_double(), #Total Revenue Per book
+                P1TOTEXP = col_double(),  # Total Expenditure Per book
+                P2TOTAST = col_double(), # Total Assets Per book
+                LEVEL1 = col_character(),  
+                NAME = col_character(),
+                CITY = col_character(),
+                STATE = col_character(),
+                ZIP5 = col_character(),
+                MSA_NECH = col_character(),
+                PMSA = col_character(),
+                LONGITUDE = col_double(),
+                LATITUDE = col_double())
+    
+  }
+  else {
+    stop("Invalid file type: type must be 'co', 'pc', or 'pf'")
+  }
+  
+  file <- read_csv(filepath, col_types = colspec)
+  names(file) <- toupper(names(file))
+  return(file)
+}
+```
+
+
+```{r}
+core2019co = processcorefile("2019", "co")
+core2019pc = processcorefile("2019", "pc")
+core2019pf = processcorefile("2019", "pf") %>% filter(LEVEL1 == "PF") %>% select(!LEVEL1) # FILTER out those who are not PF by the standard of level 1
+```
+
+```{r}
+core2019pf <- core2019pf[, c(1:6, 14:15, 7:13)]
+```
+
+Process the Index data and Merge it with the core files
+```{r}
+nteedocalleins <- read_csv("../Data/nteedocalleins.csv",
+                           col_types = cols_only(EIN = col_character(),
+                                                 NteeFinal = col_character()
+                                                 )) %>% 
+                rename(NTEEFINAL = NteeFinal)
+```
+
+```{r}
+arts <- c("A")
+highered <- c("B4", "B5")
+othered <- c("B")
+envanimals <- c("C", "D")
+hospitals <- c('E20','E21','E22','E23','E24','F31','E30','E31','E32')
+otherhlth <- c("E", "F", "G", "H")
+humanserv <- c("I", "J", "K", "L", "M", "N", "O", "P")
+intl <- c("Q")
+pubben <- c("R", "S", "T", "U", "V", "W", "Y", "Z")
+relig <- c("X")
+```
+
+```{r}
+classify <- function(dataset) {
+  
+  dataset <- dataset %>%
+    left_join(nteedocalleins, by = "EIN") 
+    
+  exp = dataset$EXPS
+  firlet = str_sub(dataset$NTEEFINAL, 1, 1)
+  fir2let = str_sub(dataset$NTEEFINAL, 1, 2)
+  fir3let = str_sub(dataset$NTEEFINAL, 1, 3)
+  
+  dataset <- dataset %>%
+    mutate(NTEEGRP = "  ") %>%
+    mutate(NTEEGRP = case_when(
+      firlet %in% arts ~ "Arts",
+      firlet %in% othered & !(fir2let %in% highered)  ~ "Other education",
+      fir2let %in% highered  ~ "Higher education",
+      firlet %in% envanimals ~ "Environment and animals",
+      firlet %in% otherhlth & !(fir3let %in% hospitals) ~ "Other health care",
+      fir3let %in% hospitals ~ "Hospitals and primary care facilities",
+      firlet %in% humanserv ~ "Human services",
+      firlet %in% intl ~ "International",
+      firlet %in% pubben ~ "Other public and social benefit",
+      firlet %in% relig ~ "Religion related")) %>%
+    mutate(NTEEGRP = if_else(is.na(NTEEFINAL), "Other public and social benefit", NTEEGRP)) %>%
+    
+    mutate(EXPCAT = "  ") %>%
+    mutate(EXPCAT = case_when(
+      exp < 100000 ~ "a. Under $100,000",
+      exp >= 100000 & exp < 500000 ~ "b. $100,000 to $499,999",
+      exp >= 500000 & exp < 1000000 ~ "c. $500,000 to $999,999",
+      exp >= 1000000 & exp < 5000000 ~ "d. $1 million to $4.99 million",
+      exp >= 5000000 & exp < 10000000 ~ "e. $5 million to $9.99 million",
+      exp >= 10000000 ~ "f. $10 million or more"))
+  
+  return(dataset)
+}
+```
+
+
+```{r}
+source("../Functions/classify.R")
+
+core2019pc <- classify(core2019pc)
+core2019pf <- classify(core2019pf)
+```
+
+```{r}
+# NTEE: National Taxonomy of Exempt Entities (NTEE) system
+
+# EIN: Employer Identification Number
+# ASS_EOY: Total assets at the end of year
+# EXPS:Total Expenses
+# FNDNCD: Reason for 501(c)(3) status (Under Other Descriptive Info): categorical/character
+# GRREC: Gross Income
+# OUTNCCS: Out of Scope flag: In/Out (of scope): OUT --> (see OUTREAS under Basic Info)
+# SUBSECCD: Subsection code (under Classification)
+# TOTREV: Total Revenue calculated
+# NTEEFINAL: NTEE - final
+# NTEEGRP
+# EXPCAT
+```
+
+```{r}
+core2019pc %>% 
+  head(5)     #FNDNCD, OUTNCCS, NTEEFINAL: a lot of NAs
+core2019pc <- core2019pc[, c(1,10, # EIN, name
+                              11,14,17:19, # outnccs, subseccd, nteefinal, nteegrp, expcat
+                             2,4:6, 15,
+                             3, 13, 16, 9,12, 7:8)] # city, state, zip5, MSA, PMSA, lat, lon
+```
+
+### BMF (IRS Business Master File) and Miscellaneous:
+```{r}
+c_types <-                      cols_only( EIN = col_character(),
+                                           NAME = col_character(),
+                                           NTEECC = col_character(),
+                                                  
+                                           OUTNCCS = col_character(), 
+                                           SUBSECCD = col_character(),
+                                           FNDNCD = col_character(),
+                                           CFINSRC = col_character(),
+                                           CTAXPER = col_character(),
+                                           CTOTREV = col_double(),
+                                           CASSETS = col_double(),
+                                           NTEEFINAL = col_character(),
+                                      
+                                           STATE = col_character(),
+                                           ZIP5 = col_double())
+
+bmf2002 <- read_csv("../Data/bmf.bm0207.csv", col_types = c_types)
+bmf2012 <- read_csv("../Data/bmf.bm1212.csv", col_types = c_types)
+bmf2017 <- read_csv("../Data/bmf.bm1712.csv", col_types = c_types)
+bmf2019 = read_csv("../Data/bmf.bm1908.csv", col_types = c_types)
+#bmf2020 = read_csv("../Data/bmf.bm2004.csv", col_types = c_types)
+bmf2022 = read_csv("../Data/bmf.bm2201.csv", col_types = c_types)
+```
+
+```{r}
+inflindex <- read_csv("../Data/External_Data/Inflation Index.csv", col_types = "cd", col_names = c("Year", "CPI")) %>% #path may not be so right
+  filter(!row_number() == 1L)
+#a <- read.csv("External_Data/Inflation Index.csv", row.names =1, header = TRUE)
+```
+
+Move to next phase of cleaning 
+
+```{r}
+bmfsize <- function(data, year) {
+
+      t1 <- data %>% 
+        filter((OUTNCCS != "OUT")) %>%
+        summarize(
+          Year = as.character(year),
+          "All registered nonprofits" = n())
+      
+      t2 <- data %>% 
+        filter((FNDNCD != "02" & FNDNCD!= "03" & FNDNCD != "04"), (SUBSECCD %in% c("03", "3")), (OUTNCCS == "IN")) %>%
+        summarize(
+          Year = as.character(year),
+          "501(c)(3) public charities" = n()
+        )
+      
+      t3 <- data %>%
+        filter(FNDNCD %in% c("02", "03", "04"), (SUBSECCD %in% c("03", "3")), (OUTNCCS == "IN")) %>%
+        summarize(
+          Year = as.character(year),
+          "501(c)(3) private foundations" = n()
+        )
+      
+    combined <- t1 %>%
+      left_join(t2, by = "Year") %>%
+      left_join(t3, by = "Year")
+  
+    return(combined)
+}
+```
+
+
+
+```{r}
+b1 <- bmfsize(bmf2002, 2002)
+b2 <- bmfsize(bmf2012, 2012)
+b3 <- bmfsize(bmf2017, 2017)
+b4 <- bmfsize(bmf2022, 2022)
+t <- bind_rows(b1,b2,b3, b4)
+
+t
+```
+
+## First Visualizations
+
+### Trend Comparison by Org Type
+```{r}
+p1 <- t %>%
+#  gather(stat, value, `All registered nonprofits`, `501(c)(3) public charities`) %>%
+#  ggplot(aes(x = as.factor(Year), y = value, color = stat, group=1)) +
+  ggplot(aes(x = as.factor(Year), group=1)) +
+  geom_line(aes(y = `All registered nonprofits`, color = "blue")) +
+  geom_point(aes(y = `All registered nonprofits`, color = "blue")) +
+  geom_line(aes(y = `501(c)(3) public charities`, color = "red")) +
+  geom_point(aes(y = `501(c)(3) public charities`, color = "red")) +
+  ggtitle("Total Nonprofit Counts by Year", subtitle = "From 2019 to 2022") +
+  labs(x = "Year", y = " ") +
+   guides(color = guide_legend(title = " ")) +
+  scale_color_discrete(labels = c("All registered nonprofits", "501(c)(3) public charities")) +
+   geom_text(aes(as.factor(Year),`All registered nonprofits` , label= `All registered nonprofits`),
+              vjust= -1, 
+              position = position_dodge(width=1),
+              size =3) +
+   geom_text(aes(as.factor(Year),`501(c)(3) public charities` , label= `501(c)(3) public charities`),
+              vjust=-1, 
+              position = position_dodge(width=1),
+              size =3) +
+   ylim(NA, 1550000)
+
+p1 #+  theme(legend.position="right", legend.direction = "vertical")
+#ggplotly(p1)
+```
+
+### Finance
+```{r}
+corefiles <- function(data, dyear, dtype) {
+  
+  if (dtype == "pc") {
+  processed <- if(dyear < 2010) filter(data, (GRREC >= 25000)) else filter(data, ((GRREC >= 50000)|(TOTREV>50000))) %>%
+      filter((is.na(OUTNCCS)|OUTNCCS != "OUT"), (FNDNCD != "02" & FNDNCD!= "03" & FNDNCD != "04")) %>%
+      summarize(
+        Reporting = n(),
+        "Revenue ($ billions)" = round((sum(as.numeric(TOTREV), na.rm =TRUE))/1000000000, digits =2),
+        "Expenses ($ billions)" = round((sum(as.numeric(EXPS), na.rm =TRUE))/1000000000, digits =2),
+        "Assets ($ billions)" = round((sum(as.numeric(ASS_EOY), na.rm =TRUE))/1000000000, digits=2))
+    processed <- melt(processed)
+    colnames(processed)[2] <- "PC"
+  
+  } else if (dtype == "co") {
+  processed <- if(dyear < 2010) filter(data, ((GRREC >= 25000)|(TOTREV>25000))) else filter(data, ((GRREC >= 50000)|(TOTREV>50000))) %>%
+      filter((OUTNCCS != "OUT")) %>%
+      summarize(
+        Reporting = n(),
+        "Revenue ($ billions)" = round((sum(as.numeric(TOTREV), na.rm =TRUE))/1000000000, digits =2),
+        "Expenses ($ billions)" = round((sum(as.numeric(EXPS), na.rm =TRUE))/1000000000, digits =2),
+        "Assets ($ billions)" = round((sum(as.numeric(ASS_EOY), na.rm =TRUE))/1000000000, digits=2))
+    processed <- melt(processed)
+    colnames(processed)[2] <- "CO"
+  
+  } else if (dtype == "pf") {
+    processed <- data %>%
+      filter(OUTNCCS != "OUT") %>%
+      summarize(
+        Reporting = n(),
+        "Revenue ($ billions)" = round((sum(as.numeric(P1TOTREV), na.rm =TRUE))/1000000000, digits =2),
+        "Expenses ($ billions)" = round((sum(as.numeric(P1TOTEXP), na.rm =TRUE))/1000000000, digits =2),
+        "Assets ($ billions)" = round((sum(as.numeric(P2TOTAST), na.rm =TRUE))/1000000000, digits=2))
+    processed <- melt(processed)
+    colnames(processed)[2] <- "PF"
+  }
+  
+  return(processed)
+} 
+
+```
+
+
+```{r}
+pc <- corefiles(core2019pc, 2019, "pc")
+co <- corefiles(core2019co, 2019, "co")
+pf <- corefiles(core2019pf, 2019, "pf")
+
+table1.data <- pc %>%
+  left_join(co, by = "variable") %>%
+  left_join(pf, by = "variable") %>%
+   mutate(
+        Variable = variable,
+        "Reporting nonprofits" = (PC+CO+PF),
+        "Reporting public charities" = PC) %>% 
+  select(-5) %>%
+  pivot_longer(PC:`Reporting public charities`, names_to = "Type", values_to = "Value") %>%
+  rename(Variable = variable)
+
+table1.data$Variable <-ifelse(table1.data$Variable == "Reporting" & table1.data$Type == "Reporting nonprofits", 
+                             "Reporting nonprofits", as.character(table1.data$Variable))
+table1.data$Variable <-ifelse(table1.data$Variable == "Reporting" & table1.data$Type == "Reporting public charities", 
+                             "Reporting public charities", as.character(table1.data$Variable))
+```
+
+```{r}
+p2 <- table1.data %>%
+  filter(Type  %in% c("PC", "CO", "PF"), Variable != "Reporting") %>%
+  ggplot(aes(x = Variable, y = Value, fill = Type)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(Variable, Value, label=Value),
+              vjust=-1, 
+              position = position_dodge(width=1),
+              size =3) +
+  ylim(NA, 5000) +
+   theme(legend.position="right", legend.direction = "vertical")
+
+ggplotly(p2)
+```
+
+
+```{r}
+# https://nccs-data.urban.org/dl.php?f=core/2018/coreco.core2018co.csv
+# https://nccs-data.urban.org/dl.php?f=core/2018/coreco.core2018pc.csv
+# https://nccs-data.urban.org/dl.php?f=core/2017/coreco.core2017co.csv
+
+#path = "C:/Users/liu00/Downloads/Urban Internship/Nonprofit Sector In Brief/Data/coreco.core2018co.csv"
+
+#download.file(URL, destination_path)
+```
+
+
+### In or Outside NCCS
+
+```{r}
+df1 <- bmf2019 %>% filter(!is.na(OUTNCCS)) %>% group_by(OUTNCCS) %>% summarise(n = n()) %>% mutate(perc = n/sum(n)) %>% arrange(-n) %>% add_column(type = c("ALL", "ALL"), .before = "OUTNCCS")
+
+df2 <- core2019pc %>% filter(!is.na(OUTNCCS)) %>% group_by(OUTNCCS) %>% summarise(n = n()) %>% mutate(perc = n/sum(n)) %>% arrange(-n) %>% add_column(type = c("PC", "PC"), .before = "OUTNCCS")
+
+df3 <- core2019pf %>% filter(!is.na(OUTNCCS)) %>% group_by(OUTNCCS) %>% summarise(n = n()) %>% mutate(perc = n/sum(n)) %>% arrange(-n) %>% add_column(type = c("PF", "PF"), .before = "OUTNCCS")
+
+df4 <- core2019co %>% filter(!is.na(OUTNCCS)) %>% group_by(OUTNCCS) %>% summarise(n = n()) %>% mutate(perc = n/sum(n)) %>% arrange(-n) %>% add_column(type = c("CO", "CO"), .before = "OUTNCCS")
+
+outnccs <- bind_rows(df1, df2, df3, df4)
+```
+
+
+## PC 
+```{r}
+table1.data.long <- pc %>%
+  left_join(co, by = "variable") %>%
+  left_join(pf, by = "variable") %>%
+   mutate(
+        Variable = variable,
+        "Reporting nonprofits" = (PC+CO+PF),
+        "Reporting public charities" = PC) %>% 
+  select(-5) 
+```
+
+```{r}
+# READ Data
+
+core2019pc <- read_csv("../Data/Output_Data/new_core2019pc.csv") %>%
+  select(!1)
+```
+
+### PC - Expense Group
+```{r}
+PC2019_ExpenseGroup <- core2019pc %>% 
+  filter(((GRREC >= 50000)|(TOTREV>50000)), #filter out organizations below minimum filing threshold for 990-EZ
+         (OUTNCCS != "OUT"), 
+         !(FNDNCD %in% c("02", "03", "04"))
+         ) %>% 
+  group_by(EXPCAT) %>%
+  summarize( 
+      Number = n(),
+      "Total Expenses" = round((sum(EXPS, na.rm =TRUE)/1000000000), digits =2),
+      "Total Assets" = round((sum(ASS_EOY, na.rm =TRUE))/1000000000, digits=2),
+      "Gross Income" = round((sum(GRREC, na.rm =TRUE))/1000000000, digits=2),
+      "Total Revenue" = round((sum(TOTREV, na.rm =TRUE))/1000000000, digits=2)
+    ) %>% 
+    #drop old variables, keep only categories and proportions
+    mutate(
+      Year = as.character(2019),
+      EXPCAT = EXPCAT,
+      Percentage = round(((Number/sum(Number))*100),digits=1),
+      "Total expenses (%)" = round(((`Total Expenses`/sum(`Total Expenses`))*100),digits=1),
+      "Total Assets (%)" = round(((`Total Assets`/sum(`Total Assets`))*100),digits=1),
+      "Gross Income (%)" = round(((`Gross Income`/sum(`Gross Income`))*100),digits=1),
+      "Total Revenue (%)" = round(((`Total Revenue`/sum(`Total Revenue`))*100),digits=1)
+    ) %>%
+  rename("Expense Group" = EXPCAT)
+  
+PC2019_ExpenseGroup <- PC2019_ExpenseGroup %>%
+  relocate(Year, .before = "Expense Group") 
+```
+
+```{r}
+PC2019_ExpenseGroup[7, ] <- list("2019", "Total Expense",  1,1,1,1,1, 1,1,1,1,1)
+
+for (i in 3:12) {
+  PC2019_ExpenseGroup[7, i] <- colSums(PC2019_ExpenseGroup[1:6, 3:12])[i-2]
+}
+
+PC2019_ExpenseGroup = PC2019_ExpenseGroup[c(7, 1:6), ]
+
+PC2019_ExpenseGroup
+```
+
+### PC - Category
+```{r}
+PC2019_CategoryGroup <- core2019pc %>% 
+  filter(((GRREC >= 50000)|(TOTREV>50000)), #filter out organizations below minimum filing threshold for 990-EZ
+         (OUTNCCS != "OUT"), 
+         !(FNDNCD %in% c("02", "03", "04"))
+         ) %>% 
+  group_by(NTEEGRP) %>%
+  summarize(  #unit: billion
+      Number = n(),
+      "Total Expenses" = round((sum(EXPS, na.rm =TRUE)/1000000000), digits =2),
+      "Total Assets" = round((sum(ASS_EOY, na.rm =TRUE))/1000000000, digits=2),
+      "Gross Income" = round((sum(GRREC, na.rm =TRUE))/1000000000, digits=2),
+      "Total Revenue" = round((sum(TOTREV, na.rm =TRUE))/1000000000, digits=2)
+    ) %>% 
+    #drop old variables, keep only categories and proportions
+    mutate(
+      Year = as.character(2019),
+      Category = NTEEGRP,
+      Percentage = round(((Number/sum(Number))*100),digits=1),
+      "Total expenses (%)" = round(((`Total Expenses`/sum(`Total Expenses`))*100),digits=1),
+      "Total Assets (%)" = round(((`Total Assets`/sum(`Total Assets`))*100),digits=1),
+      "Gross Income (%)" = round(((`Gross Income`/sum(`Gross Income`))*100),digits=1),
+      "Total Revenue (%)" = round(((`Total Revenue`/sum(`Total Revenue`))*100),digits=1)
+    ) %>%
+ # rename("Expense Group" = EXPCAT) %>%
+  
+  relocate(Year, .before = Number)  %>%
+  relocate(Category, .before = Year) %>%
+  select(!NTEEGRP)
+
+PC2019_CategoryGroup
+```
+
+
+```{r}
+PC2019_CategoryGroup[11,] = list("All public charities", "2019", 1,1,1,1,1, 1,1,1,1,1)
+
+for (i in 3:12) {
+  PC2019_CategoryGroup[11, i] = colSums(PC2019_CategoryGroup[1:10, 3:12])[i-2]
+}
+
+# rearrange the order of categories
+PC2019_CategoryGroup = PC2019_CategoryGroup[c(11, 1:2, 3, 7, 4, 8, 5, 9:10, 6), ]
+
+#PC2019_CategoryGroup %>% add_row(Category = "All public charities", Year = 2019, #colSums(PC2019_CategoryGroup[1:nrow(PC2019_CategoryGroup), 3:10]))
+
+PC2019_CategoryGroup
+
+```
+
+```{r}
+PC2019_CategoryGroup <- read_csv("../Data/Output_Data/PC2019_by_category.csv") %>%
+  select(!1)
+
+PC2019_CategoryGroup %>% 
+  select(-c(Year, Percentage:`Total Revenue (%)`)) %>% 
+  rename(Count = Number) %>% 
+  relocate(`Total Expenses`, .before = `Gross Income`) %>% 
+  
+  datatable(rownames = FALSE,  options = list(dom='Bfrtip',autoWidth = TRUE, pageLength=15, buttons=c('print', 'csv', 'pdf')), class = 'hover') # either class = "style" (default) or class = "hover" (current)
+
+```
+
+## PF
+
+### By State
+
+```{r}
+core2019pf %>% head(5)
+
+# P1TOTREV: Total revenue per book
+# P1TOTEXP: Total expenditure per book
+# P2TOTAST: Total assets per book
+# FNDNCD: Reason for 501(c)(3) status
+# NTMAJ12: NTEE major group
+
+pf2019_State <- core2019pf %>% 
+  group_by(STATE) %>% 
+  summarize( 
+      Number = n(),
+      "Total Expenses per books (bilion)" = round((sum(P1TOTEXP, na.rm =TRUE)/1000000000), digits =2),
+      "Total Assets per books (billion)" = round((sum(P2TOTAST, na.rm =TRUE))/1000000000, digits=2),
+      "Total Revenue per books (billion)" = round((sum(P1TOTREV, na.rm =TRUE))/1000000000, digits=2)
+    )
+
+pf2019_Category <- core2019pf %>% 
+  group_by(NTEEGRP) %>% 
+  summarize( 
+      Number = n(),
+      "Total Expenses per books (bilion)" = round((sum(P1TOTEXP, na.rm =TRUE)/1000000000), digits =2),
+      "Total Assets per books (billion)" = round((sum(P2TOTAST, na.rm =TRUE))/1000000000, digits=2),
+      "Total Revenue per books (billion)" = round((sum(P1TOTREV, na.rm =TRUE))/1000000000, digits=2)
+    )
+
+```
+
+
+
+
+## Geo-visualization 
+
+### Size Map
+```{r}
+bmf2019 %>% group_by(STATE) %>% summarise(Count = n())
+
+```
+
+```{r}
+size_by_state <- bmf2019 %>% group_by(STATE) %>% summarise(Count = n())
+
+size_by_state <- usmap::statepop %>% left_join(size_by_state, by = c("abbr" = "STATE")) %>% rename(state=abbr, name=full, count = Count) %>% mutate(`density_2015` = count/pop_2015) %>% relocate(count, .before = pop_2015) # change the unit of density??
+
+ggplotly(usmap::plot_usmap(data = size_by_state, region = "states", values = "count", color="black") +  scale_fill_continuous(
+    low = "lightblue", high = "darkblue", name = "Size (2019)") + labs(title = "Number of Registered Nonprofits by State in 2019"))
+```
+
+```{r}
+#size_by_state
+states <- geojsonio::geojson_read("https://rstudio.github.io/leaflet/json/us-states.geojson", what = "sp")
+
+size_by_state <- tigris::geo_join(states, size_by_state, by = "name")  
+
+table(cut_number(size_by_state$count, 5))
+
+pal <- colorBin("Blues", domain =size_by_state$count, bins = c(0, 9680, 17300, 33400, 47100, 179000)) # starts at 0 rather than 51900
+
+labels <- sprintf(
+  "<strong>%s</strong><br/>%1.0f Nonprofits <br/> %1.0f Population in 2019",
+  size_by_state$name, size_by_state$count, size_by_state$pop_2015
+) %>% lapply(htmltools::HTML)
+
+# size_by_state <- sf::st_as_sf(size_by_state, coords = c("fips", "count"))
+
+nonprof_size_19_map <- leaflet(size_by_state) %>%
+  setView(-96, 37.8, 4) %>%
+  addProviderTiles("MapBox", options = providerTileOptions(
+    id = "mapbox.light",
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN'))) %>%
+  addPolygons(
+    fillColor = ~pal(count),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto")) %>%
+  addLegend(pal = pal, values = ~count, opacity = 0.7, title = "Nonprofit size in 2019",
+    position = "bottomright")
+
+nonprof_size_19_map
+```
+
+### PC Size Map
+```{r}
+pc_size_by_state <- core2019pc %>% group_by(STATE) %>% summarise(count = n()) %>%
+  right_join(usmap::statepop, by = c("STATE" = "abbr")) %>% 
+  relocate(full, .after = STATE) %>% 
+  rename(state =STATE, name=full) %>%
+  filter(!is.na(count))
+
+states <- geojsonio::geojson_read("https://rstudio.github.io/leaflet/json/us-states.geojson", what = "sp")
+
+pc_size_by_state <- tigris::geo_join(states, pc_size_by_state, by = "name")  
+
+table(cut_number(pc_size_by_state$count, 5)) #[0, 2340, 4460, 7830, 12200, 52000]
+```
+
+### PF Size Map
+
+```{r}
+pf_size_by_state <- core2019pf %>% group_by(STATE) %>% summarise(count = n()) %>%
+  right_join(usmap::statepop, by = c("STATE" = "abbr")) %>% 
+  relocate(full, .after = STATE) %>% 
+  rename(state =STATE, name=full) %>%
+  filter(!is.na(count))
+
+pf_size_by_state <- tigris::geo_join(states, pf_size_by_state, by = "name")  
+
+table(cut_number(pf_size_by_state$count, 5)) #[0, 312, 633, 1100, 1850, 8360]
+```
+
+
+## Data Saving
+```{r}
+write.csv(t, "../Data/Output_Data/Number_nonprofit_trend.csv") 
+
+write.csv(table1.data, "../Data/Output_Data/Nonprofit_finance_2019.csv")
+
+#write.csv(pc, "../Public_charity_2019.csv")
+
+#write.csv(pf, "../Private_foundation_2019.csv")
+
+#write.csv(co, "../other_nonprofit_2019.csv")
+
+write.csv(core2019pf, "../Data/core2019pf.csv")
+write.csv(core2019co, "../Data/core2019co.csv")
+
+
+write.csv(core2019pc, "../Data/core2019pc.csv")
+
+write.csv(outnccs, "../Data/Output_Data/outnccs_19.csv")
+
+write.csv(PC2019_ExpenseGroup, "../Data/Output_Data/PC2019_by_expense.csv")
+
+write.csv(PC2019_CategoryGroup, "../Data/Output_Data/PC2019_by_category.csv")
+
+write.csv(pf2019_State, "../Data/Output_Data/PF2019_by_state.csv")
+write.csv(pf2019_Category, "../Data/Output_Data/PF2019_by_category.csv")
+
+
+#rgdal::writeOGR(obj = size_by_state, dsn= "Data/Output_Data/", layer= "nonprofit2019_size_map", driver="ESRI Shapefile")
+
+sf::st_write(sf::st_as_sf(size_by_state), "../Data/Output_Data/nonprofit2019_size_map.geojson")
+sf::st_write(sf::st_as_sf(pc_size_by_state), "../Data/Output_Data/pc_nonprofit2019_size_map.geojson")
+sf::st_write(sf::st_as_sf(pf_size_by_state), "../Data/Output_Data/pf_nonprofit2019_size_map.geojson")
+
+```
+
+
