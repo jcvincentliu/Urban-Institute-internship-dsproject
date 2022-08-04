@@ -1,0 +1,133 @@
+---
+title: "New Data"
+author: "Vincent Liu"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      eval = TRUE,
+                      warning = FALSE)
+
+library(tidyverse)
+library(httr)
+library(DT)
+library(urbnthemes)
+library(plotly)
+
+set_urbn_defaults()
+```
+
+
+## PC Data
+```{r}
+
+source("../../Functions/Process_core_file.R")
+source("../../Functions/Get_finance_data.R")
+
+pc2019 <- pc2019 %>% add_column(Year = "2019", .after = "EIN")
+pc2019 <- pc2019 %>% select(Year, NTEEGRP, EXPCAT, ASS_EOY, EXPS, GRREC, TOTREV, STATE, ZIP5)
+
+pc2018 <- process_corefile(2018, "PC")
+pc2018 <- classify(pc2018)
+pc2018 <- pc2018 %>% add_column(Year = "2018", .after = "EIN")
+pc2018 <- pc2018 %>% select(Year, NTEEGRP, EXPCAT, ASS_EOY, EXPS, GRREC, TOTREV, STATE, ZIP5)
+
+#pc2017 <- process_corefile(2017, "pc") 
+pc2017 <- get_pc_finance_data(2017)
+pc2016 <- get_pc_finance_data(2016)
+pc2015 <- get_pc_finance_data(2015) # There is a change of naming convention in 2005
+pc2014 <- get_pc_finance_data(2014)
+pc2013 <- get_pc_finance_data(2013)
+pc2012 <- get_pc_finance_data(2012)
+pc2011 <- get_pc_finance_data(2011)
+pc2010 <- get_pc_finance_data(2010)
+
+
+
+pc_finance <- rbind(pc2019, pc2018, pc2017, pc2016, pc2015, 
+                    pc2014, pc2013, pc2012, pc2011, pc2010)
+
+saveRDS(pc_finance, "pc_finance.rds")
+
+```
+
+
+```{r}
+pc2019 <- read_csv("../../Data/core2019pc.csv") %>% select(!1)
+  
+pc2019 %>% 
+  group_by(CITY) %>%
+  summarise(n = n())
+
+pc2019_fullstate <- usmap::statepop %>%
+  select(abbr, full) %>%
+  rename(STATE = abbr, STATE_NAME = full) %>%
+  left_join(pc2019, by = "STATE") %>%
+      rename(Category = NTEEGRP, Expense_Level = EXPCAT)
+  
+pc2019_fullstate %>%
+  group_by(STATE_NAME) %>%
+  summarise(n = n())
+#pc2018 <- process_corefile(2019, "pc")
+```
+
+```{r}
+source("../../Functions/PC_finance.R")
+
+p_finance <- pc_finance_expense(pc_data = pc_finance, 
+            states = c("Virginia", "California", "Minnesota", "Illinois", "District of Columbia"), c(2018)
+            )
+
+p_category <- pc_finance_category(pc_data = pc2019, 
+            states = c("Virginia", "California", "Minnesota", "Illinois", "District of Columbia"))
+
+
+```
+
+
+```{r}
+p_category %>%
+  select(!c(2, 7:11)) %>%
+#  pivot_longer(2:5, values_to = "Amount", names_to = "Finance") %>%
+  mutate(Category = factor(Category)) %>%
+  
+  ggplot(aes(x = reorder(Category, `Total Expenses`), y = `Total Expenses`)) +
+  geom_col() +
+  labs(x= NULL, y=NULL) +
+  coord_flip() +
+  theme(  axis.line = element_blank(),
+          axis.ticks.y = element_blank(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.x = element_line(color = "gray60", 
+                                           size = 0.8, 
+                                           linetype = "dashed")) +
+  geom_text(aes(label = `Total Expenses`),
+              position= position_dodge(width=1), 
+              vjust =-.1, 
+              size=3, 
+              angle = 270)
+   # scale_y_continuous(expand = c(0, 0), 
+   #                    limits = c(0, 320), 
+   #                    breaks = c(0, 20, 50, seq(100, 300, 100)))
+
+  
+```
+
+```{r}
+source("../../Functions/Get_finance_chart.R")
+
+ggplotly(finance_chart_expense(p_finance, 
+                      p_finance$"Number")
+) %>% 
+  layout(hoverlabel = list(bgcolor = "white"))
+
+ggplotly(
+  finance_chart_category(p_category, p_category$`Gross Income`)
+) %>% 
+  layout(hoverlabel = list(bgcolor = "white"))
+```
+

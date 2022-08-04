@@ -1,7 +1,7 @@
 
 packs = c("shiny", "shinydashboard", "shinythemes", "shinyWidgets", "plotly", 
-          "scales", "knitr", "kableExtra", "dplyr", "readr", "DT",
-          "shinyhelper")
+          "scales", "knitr", "kableExtra", "tidyverse", "urbnthemes", "readr", "DT", "httr",
+          "leaflet", "shinyhelper")
 
 
 ### Run the following command to verify that the required packages are installed. If some package
@@ -17,7 +17,7 @@ package.check <- lapply(packs, FUN = function(x) {
 #dat <- read_csv("data-rodeo/dat-shinyapp.csv")
 
 ### Load internal functions
-#source("funcs/applying-filters-func.R")
+#source("Function/applying-filters-func.R")
 #source("funcs/find-comparisons-func.R")
 #source("funcs/distance-metric.R")
 #source("funcs/dollarize.R")

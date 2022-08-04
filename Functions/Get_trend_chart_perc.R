@@ -10,8 +10,12 @@ library(urbnthemes)
 set_urbn_defaults()
 
 nonprofit_trend_perc <- function(data, year) {
+  
+  year = lapply(year, as.numeric)
+  
   ggplotly(
     size %>%
+      mutate(Year = as.numeric(Year)) %>%
       filter(Year %in% year) %>%
       select(!2:4) %>% 
       pivot_longer(2:3, names_to = "Type", values_to = "Percent (%)") %>%
@@ -23,6 +27,9 @@ nonprofit_trend_perc <- function(data, year) {
       geom_point(size = 2) +
       ggtitle("A Trend on PC and PF Divide (%)") +
       labs(x= NULL, y = NULL) +
+      scale_x_continuous(expand = c(0,0),
+                         limits = c(min(unlist(year)) -1, max(unlist(year)) + 1),
+                         breaks = c(seq(min(unlist(year)) , max(unlist(year)),1))) +
       scale_y_continuous(expand = c(0, 0),
                          limits = c(0, 85), 
                          breaks = c(0, 5, 10, seq(50,80,10))) +
