@@ -37,7 +37,6 @@ classify <- function(dataset, type) {
   dataset <- dataset %>%
     left_join(nteedocalleins, by = "EIN") 
   
-  exp = dataset$EXPS
   firlet = str_sub(dataset$NTEEFINAL, 1, 1)
   fir2let = str_sub(dataset$NTEEFINAL, 1, 2)
   fir3let = str_sub(dataset$NTEEFINAL, 1, 3)
@@ -58,6 +57,8 @@ classify <- function(dataset, type) {
     mutate(NTEEGRP = if_else(is.na(NTEEFINAL), "Other public and social benefit", NTEEGRP))
     
     if (type == "PC") {
+      exp = dataset$EXPS
+      
       dataset <- dataset %>%
         mutate(EXPCAT = "  ") %>%
         mutate(EXPCAT = case_when(
@@ -68,6 +69,17 @@ classify <- function(dataset, type) {
           exp >= 5000000 & exp < 10000000 ~ "e. $5 million to $9.99 million",
           exp >= 10000000 ~ "f. $10 million or more"))
     }
+  else if (type == "PF") {
+    dataset <- dataset %>%
+      mutate(EXPCAT = "  ") %>%
+      mutate(EXPCAT = case_when(
+        P1TOTEXP < 100000 ~ "a. Under $100,000",
+        P1TOTEXP >= 100000 & P1TOTEXP < 500000 ~ "b. $100,000 to $499,999",
+        P1TOTEXP >= 500000 & P1TOTEXP < 1000000 ~ "c. $500,000 to $999,999",
+        P1TOTEXP >= 1000000 & P1TOTEXP < 5000000 ~ "d. $1 million to $4.99 million",
+        P1TOTEXP >= 5000000 & P1TOTEXP < 10000000 ~ "e. $5 million to $9.99 million",
+        P1TOTEXP >= 10000000 ~ "f. $10 million or more"))
+  }
   return(dataset)
 }
 

@@ -12,6 +12,20 @@ get_pc_finance_data <- function(year) { # require there is a local data named pc
   pc_fin <- classify(pc_fin, "PC")
   pc_fin  <- pc_fin %>%
     add_column(Year = as.character(year), .after = "EIN") %>%
-    select(Year, NTEEGRP, EXPCAT, ASS_EOY, EXPS, GRREC, TOTREV, STATE, ZIP5)
+    select(Year, NTEEGRP, EXPCAT, ASS_EOY, EXPS, TOTREV, STATE, ZIP5)
  return(pc_fin) 
 }
+
+get_pf_finance_data <- function(year) {
+  pf_fin <- process_corefile(year, "PF")
+  pf_fin <- classify(pf_fin, "PF")
+  pf_fin  <- pf_fin %>%
+    add_column(Year = as.character(year), .after = "EIN") %>%
+    select(Year, P1TOTREV, P1TOTEXP, P2TOTAST, NTEEGRP, EXPCAT, STATE, ZIP5)
+return(pf_fin)
+  
+}
+  
+  
+  
+  

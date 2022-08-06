@@ -73,9 +73,6 @@ pc_finance_category <- function(pc_data, states) {
           "Total Assets" = round((
             sum(ASS_EOY, na.rm =TRUE))/1000000000, 
             digits=2),
-          "Gross Income" = round(
-            (sum(GRREC, na.rm =TRUE))/1000000000, 
-            digits=2),
           "Total Revenue" = round(
             (sum(TOTREV, na.rm =TRUE))/1000000000, 
             digits=2)
@@ -90,9 +87,6 @@ pc_finance_category <- function(pc_data, states) {
             digits=1),
           "Total Assets (%)" = round(
             ((`Total Assets`/sum(`Total Assets`))*100),
-            digits=1),
-          "Gross Income (%)" = round(
-            ((`Gross Income`/sum(`Gross Income`))*100),
             digits=1),
           "Total Revenue (%)" = round((
             (`Total Revenue`/sum(`Total Revenue`))*100),

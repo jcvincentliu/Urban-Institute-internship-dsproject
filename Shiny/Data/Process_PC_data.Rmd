@@ -31,7 +31,7 @@ pc2019 <- pc2019 %>% add_column(Year = "2019", .after = "EIN")
 pc2019 <- pc2019 %>% select(Year, NTEEGRP, EXPCAT, ASS_EOY, EXPS, GRREC, TOTREV, STATE, ZIP5)
 
 pc2018 <- process_corefile(2018, "PC")
-pc2018 <- classify(pc2018)
+pc2018 <- classify(pc2018, "PC")
 pc2018 <- pc2018 %>% add_column(Year = "2018", .after = "EIN")
 pc2018 <- pc2018 %>% select(Year, NTEEGRP, EXPCAT, ASS_EOY, EXPS, GRREC, TOTREV, STATE, ZIP5)
 

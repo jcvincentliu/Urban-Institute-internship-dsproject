@@ -41,7 +41,7 @@ process_corefile <- function(year, type) {
                    as.character(year), "/coreco.core", as.character(year),
                    tolower(type), ".csv", sep ="")  # downloadable file path
   } 
-    else if (year <2015 & type != "CO") {
+    else if (year <=2015 & type != "CO") {
      path <- paste("http://nccs-data.urban.org/dl.php?f=core/", as.character(year), 
                    "/nccs.core", as.character(year), tolower(type), ".csv", sep ="")
     }
