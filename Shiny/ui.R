@@ -7,13 +7,6 @@
 #    http://shiny.rstudio.com/
 #
 
-library(shiny)
-library(shinythemes)
-library(shinyWidgets)
-library(leaflet)
-library(DT)
-library(tidyverse)
-library(urbnthemes)
 
 
 navbarPage("Nonprofit Sector In Brief Dashboard",
@@ -112,78 +105,31 @@ navbarPage("Nonprofit Sector In Brief Dashboard",
                                                     `selected-text-format` = "Circle All"),
                                                   selected = "2019", 
                                                   multiple = TRUE),
-                                     # pickerInput(inputID = "org_type",
-                                     #             label = "Choose Organization Type",
-                                     #             choices = c("All", "Public Charity", "Private Foundation"),
-                                     #             selected = c("All"),
-                                     #             multiple=FALSE),
-                                     pickerInput(inputID = "fin_states",
-                                                 label = "Select State(s) (Multiple Choice)",
-                                                 
-                                                 choices = c("AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DC", "DE", "FL",
-                                                             "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA",
-                                                             "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE",
-                                                             "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI",
-                                                             "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV",
-                                                             "WY"),
-                                                 # choices = c("Alabama", "Alaska", "Arizona", "Arkansas", "California", 
-                                                 #             
-                                                 #             "Colorado", "Connecticut", "Delaware",
-                                                 #             "District of Columbia", "Florida", "Georgia", "Hawaii", "Idaho",
-                                                 #             
-                                                 #             "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", 
-                                                 #             
-                                                 #             "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan",
-                                                 #             
-                                                 #             "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska",
-                                                 #             
-                                                 #             "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York",
-                                                 #             
-                                                 #             "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
-                                                 #             
-                                                 #             "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
-                                                 #             
-                                                 #             "Texas",  "Utah", "Vermont","Virginia", "Washington",
-                                                 #             
-                                                 #             "West Virginia", "Wisconsin", "Wyoming"),
-
-                                                 options = list(
-                                                   `actions-box` = TRUE, 
-                                                    size = 10,
-                                                   `selected-text-format` = "Circle All"),
-                                                 selected = "AK",
-                                                 multiple= TRUE),
-                                     
-                                     # prettyRadioButtons(inputID = "fin_info",
-                                     #                    label = "Choose Category Type",
-                                     #                    choices = c("Category", "Expense_Level"),
-                                     #                    shape = "round", "outline"=TRUE, 
-                                     #                    bigger=TRUE,inline= TRUE),
-                                     
-                                      pickerInput(inputID = "fin_info",
-                                                  label = "Choose Category Type",
-                                                  choices = c("Category", "Expense_Level"),
-                                                  selected = c("Category")),
-                               
-                                     prettyRadioButtons(inputID = "fin_type",
-                                                        label = "Choose number or finance information",
-                                                        choices = c("Number",          "Percentage", 
-                                                                    "Total Assets", "Total Assets (%)",
-                                                                    "Total Expenses", "Total expenses (%)",
-                                                                    "Gross Income", "Gross Income (%)",
-                                                                    "Total Revenue", "Total Revenue (%)"),
-                                                        shape = "round", "outline"=TRUE, 
-                                                        bigger=TRUE,inline= TRUE)
-                               
-                                     # pickerInput(inputID = "fin_type",
-                                     #             label = "Choose number or finance information",
-                                     #             choices = c("Number",          "Percentage", 
-                                     #                         "Total Assets", "Total Assets (%)",
-                                     #                         "Total Expenses", "Total expenses (%)",
-                                     #                         "Gross Income", "Gross Income (%)",
-                                     #                         "Total Revenue", "Total Revenue (%)"),
-                                     #             selected = c("Number")
-                                   
+                                     pickerInput(inputId = "fin_states",
+                                                 label = "Pick State(s)",
+                                                 multiple = TRUE,
+                                                 choices = c(state.abb, "DC")),
+                                     # pickerInput(inputID = "fin_states",
+                                     #             label = "Pick States",
+                                     #             choices= c(state.abb, "DC"),
+                                     #             multiple = TRUE,
+                                     #             options = list(
+                                     #               `actions-box` = TRUE, 
+                                     #               size = 10,
+                                     #               `selected-text-format` = "Circle All")),
+                                     shinyWidgets::prettyRadioButtons(inputId = "fin_info",
+                                                                      label = "Choose Information",
+                                                                      choices=c("Category", "Expense_Level"),
+                                                                      shape = "round", inline = TRUE),
+                                     shinyWidgets::prettyRadioButtons(inputId = "fin_type",
+                                                                      label = "Choose Topic",
+                                                                      choices = c("Number", "Percentage",
+                                                                                  "Total Assets", "Total Assets (%)",
+                                                                                  "Total Revenue", "Total Revenue (%)",
+                                                                                  "Total Expenses", "Total Expenses (%)"),
+                                                                      shape = "round",
+                                                                      inline = TRUE)
+                            
                                    ), # end sidebarPanel
                                    
                                    mainPanel(
@@ -192,7 +138,8 @@ navbarPage("Nonprofit Sector In Brief Dashboard",
                                                                      width = "95%",
                                                                      height = 600 )),
                                        tabPanel("Data", DTOutput('finance_table',
-                                                                 width = "90%"))
+                                                                 width = "90%", 
+                                                                 height = 600))
                                      ) # end tabsetPanel
                                    ) # end mainpanel
                                    
@@ -244,3 +191,12 @@ navbarPage("Nonprofit Sector In Brief Dashboard",
                 ) # end innter tab panel
             ) # end tabpanel
 ) # end navbarpage
+
+
+# tags$head(
+#   tags$style(HTML(".sidebar {
+#                       height: 90vh; overflow-y: auto;
+#                     }"
+#   ) # close HTML       
+#   )            # close tags$style
+# ),             # close tags#Head
