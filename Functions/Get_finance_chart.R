@@ -9,9 +9,11 @@ set_urbn_defaults()
 
 finance_chart_category <- function(data, finance_info) {
   p_finance <- data %>%
-    mutate(Category = factor(Category)) %>%
+    mutate(Category = factor(Category))
     
-    ggplot(aes(x = reorder(Category, finance_info), y = finance_info)) +
+  p <- 
+    ggplot(p_finance, aes(x = reorder(Category, finance_info), 
+               y = finance_info)) +
     geom_col(fill = "#73bfe2") +
     labs(x= NULL, y=NULL) +
     coord_flip() +
@@ -29,7 +31,7 @@ finance_chart_category <- function(data, finance_info) {
               size=3, 
               angle = 270)
     
-    return(p_finance)
+    return(p)
 }
 
 finance_chart_expense <- function(data, finance_info) {

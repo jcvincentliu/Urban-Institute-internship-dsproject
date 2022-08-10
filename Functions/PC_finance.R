@@ -3,15 +3,15 @@
 library(tidyverse)
 library(httr)
 library(usmap)
-
+# states should be in the form of abbreviations
 pc_finance_category <- function(pc_data, states) {
   
-    new_data <- 
-      statepop %>% 
-      select(abbr, full) %>%
-      rename(STATE = abbr, STATE_NAME = full) %>%
-      left_join(pc_data, by = "STATE") %>%
-      rename(Category = NTEEGRP, Expense_Level = EXPCAT)
+  new_data <- 
+    statepop %>% 
+    select(abbr, full) %>%
+    rename(STATE = abbr, STATE_NAME = full) %>%
+    left_join(pc_data, by = "STATE") %>%
+    rename(Category = NTEEGRP, Expense_Level = EXPCAT)
     
     summary_data <- new_data %>%
    #   filter(STATE_NAME %in% states) %>%   #FOR Full STATE NAME
@@ -63,7 +63,7 @@ pc_finance_category <- function(pc_data, states) {
         rename(Category = NTEEGRP, Expense_Level = EXPCAT, YEAR = Year)
       
       summary_data <- new_data %>%
-        filter(STATE_NAME %in% states) %>%
+        filter(STATE %in% states) %>%
         group_by(Expense_Level) %>%
         summarize( 
           Number = n(),
@@ -82,7 +82,7 @@ pc_finance_category <- function(pc_data, states) {
           Percentage = round(
             ((Number/sum(Number))*100),
             digits=1),
-          "Total expenses (%)" = round(
+          "Total Expenses (%)" = round(
             ((`Total Expenses`/sum(`Total Expenses`))*100),
             digits=1),
           "Total Assets (%)" = round(

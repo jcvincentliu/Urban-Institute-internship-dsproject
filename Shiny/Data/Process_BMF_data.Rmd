@@ -39,20 +39,20 @@ saveRDS(pc19_catgeory_perc, "pc19_category_percent.rds")
 ```{r, warning =FALSE}
 source(paste0("../../", "Functions","/Process_BMF_file.R"))
 
-bmf2022 <- process_bmf(2022,01) %>% add_column(Year = "2022", .after="EIN")
+bmf2022 <- process_bmf(2022,01) %>% add_column(YEAR = "2022", .after="EIN")
 # lack bmf2021
-bmf2020 <-process_bmf(2020,04) %>% add_column(Year = "2020", .after="EIN")
-bmf2019 <- process_bmf(2010,08) %>% add_column(Year = "2019", .after="EIN")
-bmf2018 <- process_bmf(2018,12) %>% add_column(Year = "2018", .after="EIN")
-bmf2017 <- process_bmf(2017,09) %>% add_column(Year = "2017", .after="EIN")       # for years that have multiple BMFs, I picked the earlier one 
-bmf2016 <- process_bmf(2016,02) %>% add_column(Year = "2016", .after="EIN")
+bmf2020 <-process_bmf(2020,04) %>% add_column(YEAR = "2020", .after="EIN")
+bmf2019 <- process_bmf(2010,08) %>% add_column(YEAR = "2019", .after="EIN")
+bmf2018 <- process_bmf(2018,12) %>% add_column(YAER = "2018", .after="EIN")
+bmf2017 <- process_bmf(2017,09) %>% add_column(YAER = "2017", .after="EIN")       # for years that have multiple BMFs, I picked the earlier one 
+bmf2016 <- process_bmf(2016,02) %>% add_column(YEAR = "2016", .after="EIN")
 
-bmf2015 <- process_bmf(2015,02) %>% add_column(Year = "2015", .after="EIN")
-bmf2014 <- process_bmf(2014,02) %>% add_column(Year = "2014", .after="EIN")
-bmf2013 <- process_bmf(2013,02) %>% add_column(Year = "2013", .after="EIN")
-bmf2012 <- process_bmf(2012,02) %>% add_column(Year = "2012", .after="EIN")
-bmf2011 <- process_bmf(2011,06) %>% add_column(Year = "2011", .after="EIN")
-bmf2010 <- process_bmf(2010,01) %>% add_column(Year = "2010", .after="EIN")
+bmf2015 <- process_bmf(2015,02) %>% add_column(YEAR = "2015", .after="EIN")
+bmf2014 <- process_bmf(2014,02) %>% add_column(YEAR = "2014", .after="EIN")
+bmf2013 <- process_bmf(2013,02) %>% add_column(YEAR = "2013", .after="EIN")
+bmf2012 <- process_bmf(2012,02) %>% add_column(YEAR = "2012", .after="EIN")
+bmf2011 <- process_bmf(2011,06) %>% add_column(YEAR = "2011", .after="EIN")
+bmf2010 <- process_bmf(2010,01) %>% add_column(YEAR = "2010", .after="EIN")
 
 bmf2009 <- process_bmf(2009,01) %>% add_column(Year = "2009", .after="EIN")
 bmf2008 <- process_bmf(2008,01) %>% add_column(Year = "2008", .after="EIN") #No Outnccs information
@@ -229,6 +229,158 @@ DT::datatable(size)
 ```
 
 
-
 *** Note: Year should be numeric
+
+
+```{r}
+npo_size22 <- bmf2022 %>% 
+  group_by(STATE) %>% 
+  summarise(COUNT = n()) %>% 
+  mutate(Year = "2022") %>%
+  right_join(usmap::statepop %>% 
+               select(abbr, full), 
+             by = c("STATE" = "abbr")) %>% 
+  rename(STATE_NAME=full) %>%
+  relocate(STATE_NAME, .after = STATE) 
+
+npo_size20 <- bmf2020 %>% 
+  group_by(STATE) %>% 
+  summarise(COUNT = n()) %>% 
+  mutate(Year = "2020") %>%
+  right_join(usmap::statepop %>% 
+               select(abbr, full), 
+             by = c("STATE" = "abbr")) %>% 
+  rename(STATE_NAME=full) %>%
+  relocate(STATE_NAME, .after = STATE) 
+
+npo_size19 <- bmf2019 %>% 
+  group_by(STATE) %>% 
+  summarise(COUNT = n()) %>% 
+  mutate(Year = "2019") %>%
+  right_join(usmap::statepop %>% 
+               select(abbr, full), 
+             by = c("STATE" = "abbr")) %>% 
+  rename(STATE_NAME=full) %>%
+  relocate(STATE_NAME, .after = STATE) 
+
+npo_size18 <- bmf2018 %>% 
+  group_by(STATE) %>% 
+  summarise(COUNT = n()) %>% 
+  mutate(Year = "2018") %>%
+  right_join(usmap::statepop %>% 
+               select(abbr, full), 
+             by = c("STATE" = "abbr")) %>% 
+  rename(STATE_NAME=full) %>%
+  relocate(STATE_NAME, .after = STATE) 
+
+npo_size17 <- bmf2017 %>% 
+  group_by(STATE) %>% 
+  summarise(COUNT = n()) %>% 
+  mutate(Year = "2017") %>%
+  right_join(usmap::statepop %>% 
+               select(abbr, full), 
+             by = c("STATE" = "abbr")) %>% 
+  rename(STATE_NAME=full) %>%
+  relocate(STATE_NAME, .after = STATE) 
+
+npo_size16 <- bmf2016 %>% 
+  group_by(STATE) %>% 
+  summarise(COUNT = n()) %>% 
+  mutate(Year = "2016") %>%
+  right_join(usmap::statepop %>% 
+               select(abbr, full), 
+             by = c("STATE" = "abbr")) %>% 
+  rename(STATE_NAME=full) %>%
+  relocate(STATE_NAME, .after = STATE) 
+
+npo_size15 <- bmf2015 %>% 
+  group_by(STATE) %>% 
+  summarise(COUNT = n()) %>% 
+  mutate(Year = "2015") %>%
+  right_join(usmap::statepop %>% 
+               select(abbr, full), 
+             by = c("STATE" = "abbr")) %>% 
+  rename(STATE_NAME=full) %>%
+  relocate(STATE_NAME, .after = STATE) 
+
+npo_size14 <- bmf2014 %>% 
+  group_by(STATE) %>% 
+  summarise(COUNT = n()) %>% 
+  mutate(Year = "2014") %>%
+  right_join(usmap::statepop %>% 
+               select(abbr, full), 
+             by = c("STATE" = "abbr")) %>% 
+  rename(STATE_NAME=full) %>%
+  relocate(STATE_NAME, .after = STATE) 
+
+npo_size13 <- bmf2013 %>% 
+  group_by(STATE) %>% 
+  summarise(COUNT = n()) %>% 
+  mutate(Year = "2013") %>%
+  right_join(usmap::statepop %>% 
+               select(abbr, full), 
+             by = c("STATE" = "abbr")) %>% 
+  rename(STATE_NAME=full) %>%
+  relocate(STATE_NAME, .after = STATE) 
+
+npo_size12 <- bmf2012 %>% 
+  group_by(STATE) %>% 
+  summarise(COUNT = n()) %>% 
+  mutate(Year = "2012") %>%
+  right_join(usmap::statepop %>% 
+               select(abbr, full), 
+             by = c("STATE" = "abbr")) %>% 
+  rename(STATE_NAME=full) %>%
+  relocate(STATE_NAME, .after = STATE) 
+
+npo_size11 <- bmf2011 %>% 
+  group_by(STATE) %>% 
+  summarise(COUNT = n()) %>% 
+  mutate(Year = "2011") %>%
+  right_join(usmap::statepop %>% 
+               select(abbr, full), 
+             by = c("STATE" = "abbr")) %>% 
+  rename(STATE_NAME=full) %>%
+  relocate(STATE_NAME, .after = STATE) 
+
+npo_size10 <- bmf2010 %>% 
+  group_by(STATE) %>% 
+  summarise(COUNT = n()) %>% 
+  mutate(Year = "2010") %>%
+  right_join(usmap::statepop %>% 
+               select(abbr, full), 
+             by = c("STATE" = "abbr")) %>% 
+  rename(STATE_NAME=full) %>%
+  relocate(STATE_NAME, .after = STATE) 
+```
+
+```{r}
+all_npo_size <- rbind(npo_size22,
+                      npo_size20, npo_size19, npo_size18, npo_size17, npo_size16,
+                      npo_size15, npo_size14, npo_size13, npo_size12, npo_size11,
+                      npo_size10)
+
+saveRDS(all_npo_size, "nonprofit_size_by_state.rds")
+```
+
+```{r}
+usa_states <- geojsonio::geojson_read("https://rstudio.github.io/leaflet/json/us-states.geojson", what = "sp")
+
+size_by_state <- tigris::geo_join(usa_states, all_npo_size, "name","STATE_NAME") 
+
+all_npo_size %>% filter(Year %in% c("2022", "2020", "2010")) %>% group_by(STATE) %>% summarise(Count = sum(COUNT)) %>% ungroup() %>% mutate(STATE_NAME = STATE_NAME)
+```
+
+```{r}
+source("../../Functions/Get_size_map.R")
+
+create_size_map(all_npo_size, c("2022", "2020", "2010"))
+```
+
+
+```{r}
+size_map
+```
+
+
 

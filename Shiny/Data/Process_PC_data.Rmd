@@ -126,8 +126,65 @@ ggplotly(finance_chart_expense(p_finance,
   layout(hoverlabel = list(bgcolor = "white"))
 
 ggplotly(
-  finance_chart_category(p_category, p_category$`Gross Income`)
+  finance_chart_category(p_category, p_category$"Total Assets")
 ) %>% 
   layout(hoverlabel = list(bgcolor = "white"))
 ```
+
+
+```{r}
+pc_finance <- readRDS("pc_finance.rds")
+source("../../Functions/PC_finance.R")
+
+
+p_finance <- pc_finance_expense(pc_data = pc_finance, 
+            states = c("NY", "CA", "IL", "MN"))
+
+p_category <- pc_finance_category(pc_data = pc_finance, 
+            states = c("NY", "CA", "IL", "MN"))
+
+ggplotly(
+  finance_chart_expense(p_finance, p_finance$"Number")
+) %>% 
+  layout(hoverlabel = list(bgcolor = "white"))
+```
+
+```{r}
+  finance_chart_expense(p_finance, p_finance$"Percentage")
+
+```
+
+
+```{r}
+new_data <- 
+    usmap::statepop %>% 
+    select(abbr, full) %>%
+    rename(STATE = abbr, STATE_NAME = full) %>%
+    left_join(pc_finance, by = "STATE") %>%
+    rename(Category = NTEEGRP, Expense_Level = EXPCAT)
+
+new_data %>%
+   #   filter(STATE_NAME %in% states) %>%   #FOR Full STATE NAME
+      filter(STATE %in% c("NY", "DC", "CA")) %>% # For state abbreviations
+      group_by(Category) %>%
+      summarize( 
+        Number = n(),
+        "Total Expenses" = round(
+          (sum(EXPS, na.rm =TRUE)/1000000000), 
+          digits =2),
+        "Total Assets" = round((
+          sum(ASS_EOY, na.rm =TRUE))/1000000000, 
+          digits=2),
+        "Gross Income" = round(
+          (sum(GRREC, na.rm =TRUE))/1000000000, 
+          digits=2),
+        "Total Revenue" = round(
+          (sum(TOTREV, na.rm =TRUE))/1000000000, 
+          digits=2)
+      ) 
+```
+
+
+
+
 
