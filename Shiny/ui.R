@@ -20,12 +20,14 @@ navbarPage("Nonprofit Sector In Brief Dashboard",
                     HTML('<a style="text-decoration:none;cursor:default;color:#FFFFFF;" class="active" href="#">U.S. Nonprofit</a>'), 
                     id="nav",
                     tabPanel("Dashboard",
+                             fluid =TRUE,
                              div(class="outer",
                                  tags$head(includeCSS("www/styles.css")),
                                  
                                  sidebarLayout(
                                    sidebarPanel(
-                                     span( div( img(src="Urban logo.png",
+                                     style = "height: 90vh; overflow-y: auto;",
+                                     span( div( img(src="Resized_Urban_logo.png",
                                                     height="45%", 
                                                     width="90%", 
                                                     align="center")) ),
@@ -39,14 +41,15 @@ navbarPage("Nonprofit Sector In Brief Dashboard",
                                      pickerInput(inputId = "Trend_Year", 
                                                  label = "Select IRS Filing Year (Minimum Three)", 
                                                  choices = c("2022", "2020", "2019", "2018", "2017", "2016", "2015", "2014", 
-                                                             "2013", "2012", "2011", "2010", "2009", "2008", "2007", "2006",
+                                                             "2013", "2012", "2011", "2010", 
+                                                             "2009", "2008", "2007", "2006",
                                                              "2005", "2004", "2003", "2002", "2001", "2000", "1999", "1998",
                                                              "1997", "1996", "1995", "1989"), 
+                                                 selected = "2022",
                                                  options = list(
                                                       `actions-box` = TRUE, 
                                                        size = 10,
                                                       `selected-text-format` = "Circle All"),
-                                                 selected = c("2019"), 
                                                  multiple = TRUE)
                        
                                      
@@ -54,11 +57,16 @@ navbarPage("Nonprofit Sector In Brief Dashboard",
                                    
                                    mainPanel(
                                      tabsetPanel(
-                                       tabPanel("Plot", plotlyOutput('trendshiny',
+                                       tabPanel("Trend Plot", plotlyOutput('trendshiny',
                                                           width = "95%",
-                                                          height = 600 )),
+                                                          height = 600 )), 
+                                       tabPanel("Size Map", leafletOutput("size_map",   # only 2010 - 2022 available
+                                                                          width = "95%",
+                                                                          height = 600)),
                                        tabPanel("Data", DTOutput('trendtable',
-                                                      width = "90%"))
+                                                      width = "90%"), 
+                                                style = 
+                                                  "height:500px;overflow-y: scroll;overflow-x: scroll;")
                                      ) # end tabsetPanel
                                    ) # end mainpanel
                               
@@ -72,7 +80,7 @@ navbarPage("Nonprofit Sector In Brief Dashboard",
            ###################################################
            ### 2nd Page: ?????
            ###################################################
-           tabPanel("Nonprofit Finance", 
+             tabPanel("Public Charity Finance", 
                     fluidPage(theme = shinytheme("cerulean")),
                     collapsible = TRUE,
                     HTML('<a style="text-decoration:none;cursor:default;color:#FFFFFF;" class="active" href="#">U.S. Nonprofit</a>'), 
@@ -80,11 +88,18 @@ navbarPage("Nonprofit Sector In Brief Dashboard",
                     tabPanel("Dashboard",
                              div(class="outer",
                                  tags$head(includeCSS("www/styles.css")),
+                           #      tags$style(HTML(".sidebar {
+                             #                           height: 90vh; overflow-y: auto;
+                               #                       }"
+                                #    ) # close HTML       
+                                #    )            # close tags$style
+                                #  ),             # close tags#Head
                                  
                                  sidebarLayout(
                                    sidebarPanel(
+                                     style = "height: 90vh; overflow-y: auto;",
                                      span( div( 
-                                       img(src="Urban logo.png",
+                                       img(src="Resized_Urban_logo.png",
                                                     height="45%", 
                                                     width="90%", 
                                                     align="center")
@@ -103,12 +118,16 @@ navbarPage("Nonprofit Sector In Brief Dashboard",
                                                     `actions-box` = TRUE, 
                                                     size = 10,
                                                     `selected-text-format` = "Circle All"),
-                                                  selected = "2019", 
                                                   multiple = TRUE),
                                      pickerInput(inputId = "fin_states",
                                                  label = "Pick State(s)",
                                                  multiple = TRUE,
-                                                 choices = c(state.abb, "DC")),
+                                                 choices = c(state.abb, "DC"),
+                                                 options = list(
+                                                   `actions-box` = TRUE,
+                                                   size = 10,
+                                                   `selected-text-format` = "Circle All"
+                                                 )),
                                      # pickerInput(inputID = "fin_states",
                                      #             label = "Pick States",
                                      #             choices= c(state.abb, "DC"),
@@ -119,7 +138,7 @@ navbarPage("Nonprofit Sector In Brief Dashboard",
                                      #               `selected-text-format` = "Circle All")),
                                      shinyWidgets::prettyRadioButtons(inputId = "fin_info",
                                                                       label = "Choose Information",
-                                                                      choices=c("Category", "Expense_Level"),
+                                                                      choices=c("Category", "Expense Level"),
                                                                       shape = "round", inline = TRUE),
                                      shinyWidgets::prettyRadioButtons(inputId = "fin_type",
                                                                       label = "Choose Topic",
@@ -136,10 +155,11 @@ navbarPage("Nonprofit Sector In Brief Dashboard",
                                      tabsetPanel(
                                        tabPanel("Plot", plotlyOutput('finance_barchart',
                                                                      width = "95%",
-                                                                     height = 600 )),
-                                       tabPanel("Data", DTOutput('finance_table',
-                                                                 width = "90%", 
-                                                                 height = 600))
+                                                                     height = 600)),
+                                       tabPanel("Data", DTOutput('finance_table', width = "90%"),
+                                                                 style = 
+                                                                       "height:500px;overflow-y: scroll;overflow-x: scroll;"
+                                                                     )
                                      ) # end tabsetPanel
                                    ) # end mainpanel
                                    
@@ -153,7 +173,7 @@ navbarPage("Nonprofit Sector In Brief Dashboard",
       ###################################################
       ### 3rd Page:
       ###################################################  
-      tabPanel("Public Charity", 
+      tabPanel("Contact", 
                fluidPage(theme = shinytheme("cerulean")), 
                collapsible = TRUE,
                HTML('<a style="text-decoration:none;cursor:default;color:#FFFFFF;" class="active" href="#">U.S. Nonprofit</a>'), 

@@ -10,7 +10,10 @@
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) { 
- 
+  
+  ##################################################
+  ### 3rd Page
+  ##################################################            
    pc19_reactive <- reactive({
      if (input$Format == "Number") {
        select(pc19_category, !c(8:12))
@@ -19,6 +22,9 @@ shinyServer(function(input, output) {
    }
 }) # end reactive
 
+   ##################################################
+   ### 1st Page: General/Summary/Overview
+   ##################################################           
    trend_reactive <- reactive({
      if (input$Trend_Format == "Number")
      {nonprofit_trend(data = size, year = input$Trend_Year)}
@@ -36,56 +42,130 @@ shinyServer(function(input, output) {
    
    # NEED TO ADD PC/PF, MSA
    
-   pc_year_reactive <- reactive( {
-     filter(pc, pc$Year %in% input$fin_Year) 
-   })
+   ##################################################
+   ### 2nd Page: General/Summary/Overview
+   ##################################################           
+   # pc_year_reactive <- reactive( {
+   #   filter(pc, pc$Year %in% input$fin_Year) 
+   # })
    
-   pc_finance_info_reactive <- reactive({
+   pc_finance_reactive <- reactive({
+     pc_finance <- pc_finance %>% 
+       filter(Year %in% input$fin_Year)
+     
      if (input$fin_info == "Category") {
-       pc_finance_category(pc_data = pc_year_reactive(), states = input$fin_states)
-     }  else if (input$fin_info == "Expense_Level") {
-       pc_finance_expense(pc_data = pc_year_reactive(), states = input$fin_states)
+       data <- pc_finance_category(pc_data = pc_finance, 
+                                   states = input$fin_states)
+     } else if (input$fin_info == "Expense Level") {
+       data <- pc_finance_expense(pc_finance,
+                                  input$fin_states)
      }
+     data
   }) # end reactive
    
-   # pc_finance_plot_reactive <- reactive({
-   #   if (input$fin_info == "Category") {
-   #     finance_chart_category(data = pc_finance_info_reactive(), pc_finance_info_reactive()$input$fin_type)
-   #   }  else if (input$fin_info == "Expense_Level") {
-   #     finance_chart_expense(data = pc_finance_info_reactive(), pc_finance_info_reactive()$input$fin_type) }
-   # }) 
-   
-   output$finance_barchart <- renderPlotly({
-       if (input$fin_info == "Category") {
-         p <- finance_chart_category(data = pc_finance_info_reactive(), 
-                        pc_finance_info_reactive()$input$fin_type)
-        } else if (input$in_info == "Expense_Level") {
-          p <- finance_chart_expense(data = pc_finance_info_reactive(), 
-                                     pc_finance_info_reactive()$input$fin_type)
-          p
-        }
-          ggplotly(p) %>%
-        
-            layout(legend = list(orientation = "h",
-                            x = 0.2,
-                            y = -0.2),
-              hoverlabel = list(bgcolor = "white"))
+   pc_finance_plot_reactive <- reactive({
+     if (input$fin_type == "Number") {
+       t = "Number"
+            }  else if (input$fin_type == "Percentage") {
+              t = "Percentage"
+            } else if (input$fin_type == "Total Assets") {
+              t = "Total Assets"
+            }   else if (input$fin_type == "Total Revenue")  {
+              t = "Total Revenue"
    }
-   )
+     })
    
-  output$finance_table <- renderDT({pc_finance_info_reactive()},
+   ##################################################
+   ### 2nd Page: General/Summary/Overview
+   ##################################################  
+   output$finance_barchart <- renderPlotly({
+   #  type <- input$fin_type
+     
+     if (input$fin_type == "Number") {
+       if (input$fin_info == "Category") {
+         p <- finance_chart_category(data = pc_finance_reactive(), 
+                                     pc_finance_reactive()$"Number")
+        } else if (input$fin_info == "Expense_Level") {
+          p <- finance_chart_expense(data = pc_finance_reactive(), 
+                                     pc_finance_reactive()$"Number")
+        }
+     } else if (input$fin_type == "Percentage") {
+       if (input$fin_info == "Category") {
+         p <- finance_chart_category(data = pc_finance_reactive(), 
+                                     pc_finance_reactive()$"Percentage")
+       } else if (input$fin_info == "Expense_Level") {
+         p <- finance_chart_expense(data = pc_finance_reactive(), 
+                                    pc_finance_reactive()$"Percentage")
+       }
+       
+     } else if (input$fin_type == "Total Assets") {
+       if (input$fin_info == "Category") {
+         p <- finance_chart_category(data = pc_finance_reactive(), 
+                                     pc_finance_reactive()$"Total Assets")
+       } else if (input$fin_info == "Expense_Level") {
+         p <- finance_chart_expense(data = pc_finance_reactive(), 
+                                    pc_finance_reactive()$"Total Assets")
+       }
+     } else if (input$fin_type == "Total Assets (%)") {
+       if (input$fin_info == "Category") {
+         p <- finance_chart_category(data = pc_finance_reactive(), 
+                                     pc_finance_reactive()$"Total Assets (%)")
+       } else if (input$fin_info == "Expense_Level") {
+         p <- finance_chart_expense(data = pc_finance_reactive(), 
+                                    pc_finance_reactive()$"Total Assets (%)")
+       }
+     }  else if (input$fin_type == "Total Expenses") {
+       if (input$fin_info == "Category") {
+         p <- finance_chart_category(data = pc_finance_reactive(), 
+                                     pc_finance_reactive()$"Total Expenses")
+       } else if (input$fin_info == "Expense_Level") {
+         p <- finance_chart_expense(data = pc_finance_reactive(), 
+                                    pc_finance_reactive()$"Total Expenses")
+       }
+     } else if (input$fin_type == "Total Expenses (%)") {
+       if (input$fin_info == "Category") {
+         p <- finance_chart_category(data = pc_finance_reactive(), 
+                                     pc_finance_reactive()$"Total Expenses (%)")
+       } else if (input$fin_info == "Expense_Level") {
+         p <- finance_chart_expense(data = pc_finance_reactive(), 
+                                    pc_finance_reactive()$"Total Expenses (%)")
+       }
+     } else if (input$fin_type == "Total Revenue") {
+       if (input$fin_info == "Category") {
+         p <- finance_chart_category(data = pc_finance_reactive(), 
+                                     pc_finance_reactive()$"Total Revenue")
+       } else if (input$fin_info == "Expense_Level") {
+         p <- finance_chart_expense(data = pc_finance_reactive(), 
+                                    pc_finance_reactive()$"Total Revenue")
+       }
+     } else if (input$fin_type == "Total Revenue (%)") {
+       if (input$fin_info == "Category") {
+         p <- finance_chart_category(data = pc_finance_reactive(), 
+                                     pc_finance_reactive()$"Total Revenue (%)")
+       } else if (input$fin_info == "Expense_Level") {
+         p <- finance_chart_expense(data = pc_finance_reactive(), 
+                                    pc_finance_reactive()$"Total Revenue (%)")
+       }
+     }
+     
+          ggplotly(p) %>%
+            layout(hoverlabel = list(bgcolor = "white")) 
+   } # end renderPlotly}
+   ) # end renderPlotly
+   
+  output$finance_table <- renderDT({pc_finance_reactive()},
                                    rownames=FALSE, 
                                    options = list(
-                                     scrollX = TRUE,
-                                     autoWidth = TRUE, 
-                                     pageLength= 15,
-                                     buttons = 
-                                       list('copy', 'print', list(
-                                         extend = 'collection',
-                                         buttons = c('csv', 'excel', 'pdf'),
-                                         text = 'Download'))
-                                     ))
-   
+                                     paging = FALSE))
+  
+  ##################################################
+  ### 1st Page: General/Summary/Overview
+  ################################################## 
+  output$size_map <- renderLeaflet({
+    create_size_map(all_size, input$Trend_Year)
+    
+  })
+  
   output$trendshiny <- renderPlotly(
     ggplotly({trend_reactive()}) %>%
       layout(legend = list(orientation = "h",
@@ -97,28 +177,16 @@ shinyServer(function(input, output) {
   output$trendtable <- renderDT({trend_data_reactive()},
                                rownames=FALSE, 
                                options = list(
-                                 scrollX = TRUE,
-                                 autoWidth = TRUE, 
-                                 pageLength= 15,
-                                 buttons = 
-                                   list('copy', 'print', list(
-                                     extend = 'collection',
-                                     buttons = c('csv', 'excel', 'pdf'),
-                                     text = 'Download'))
-                                 ))
+                                 paging = FALSE))
   
-    
+  ##################################################
+  ### 3rd Page
+  ##################################################   
   output$pctable19 <-  renderDT({pc19_reactive()},
                                rownames=FALSE, 
                                options = list(
-                                 scrollX = TRUE,
                                  autoWidth = TRUE, 
-                                 pageLength=15,
-                                 buttons = 
-                                   list('copy', 'print', list(
-                                     extend = 'collection',
-                                     buttons = c('csv', 'excel', 'pdf'),
-                                     text = 'Download'))
+                                 pageLength=15
                                  ))
   } # end function
 ) # end ShinyServer

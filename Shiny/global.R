@@ -14,9 +14,11 @@ package.check <- lapply(packs, FUN = function(x) {
 
 pc19_category <- readRDS("Data/pc19_category.rds")
 size <- readRDS("Data/nonprofit_size_table.rds")
-pc <- readRDS("Data/pc_finance.rds")
+pc_finance <- readRDS("Data/pc_finance.rds")
+all_size <- readRDS("Data/nonprofit_size_by_state.rds")
 
 source("../Functions/Get_trend_chart.R")
 source("../Functions/Get_trend_chart_perc.R")
 source("../Functions/PC_finance.R")
 source("../Functions/Get_finance_chart.R")
+source("../Functions/Get_size_map.R")
