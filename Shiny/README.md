@@ -18,8 +18,8 @@
 ## To work on: 
 1. Resize Urban Logo
 2. Lines (commented out) to add footer in `ui.R` are not working. Future researchers need to figure out how to build the footer
-3. For graphs on the Organization Type page, only data of the 10 most recent years on the [NCCS Data Archive](https://nccs-data.urban.org/data.php?ds=core) webpage is deployed. 
-More data needs to be processed and loaded to make the page comprehensive
-5. Titles can be added to graphs and tables 
+3. For graphs on the Organization Type page, only data of the 10 most recent years on the [NCCS Data Archive](https://nccs-data.urban.org/data.php?ds=core) webpage is deployed on the portal. More data shall be processed and loaded to make the page comprehensive (i.e. including all data from 1989 - now)
+4. Include Volunteering and Giving information. This new page could mirror the Summary page
+5. Add titles to graphs and tables 
 6. Portal layout could be improved depending on the need and requirement
 7. Need to figure out how to publish the portal so that it's sharable
