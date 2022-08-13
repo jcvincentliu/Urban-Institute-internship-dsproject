@@ -1,4 +1,4 @@
-# Helper Functions to Build Shiny Data Poral and Flex Dashboard
+# Helper Functions to Build Shiny Data Portal and Flex Dashboard
 
 ## Data Cleaning and Processing
 - `Process_BMF_file.R` and `Process_core_file.R`: Functions to retrieve a dataset from the NCCS Databse 
