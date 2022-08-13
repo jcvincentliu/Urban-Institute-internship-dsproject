@@ -8,3 +8,5 @@
 
 ![image](https://user-images.githubusercontent.com/70295316/184473942-a43ef59e-2908-4ca0-a3b2-41131455111f.png)
 
+## Skills:
+> R Shiny, R `Flex_dashboard` package, Function writing, HTML knowledge, data visualization, data storytelling, project management
