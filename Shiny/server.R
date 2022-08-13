@@ -1,26 +1,11 @@
-#
-# This is the server logic of a Shiny web application. You can run the
-# application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
 
-
-# Define server logic required to draw a histogram
 shinyServer(function(input, output) { 
   
   ##################################################
   ### 3rd Page
   ##################################################            
-   pc19_reactive <- reactive({
-     if (input$Format == "Number") {
-       select(pc19_category, !c(8:12))
-    } else if (input$Format == "Percentage") {
-      select(pc19_category, !c(3:7))
-   }
-}) # end reactive
+  
+  # n\a for now
 
    ##################################################
    ### 1st Page: General/Summary/Overview
@@ -43,7 +28,7 @@ shinyServer(function(input, output) {
    # NEED TO ADD PC/PF, MSA
    
    ##################################################
-   ### 2nd Page: General/Summary/Overview
+   ### 2: 2-1 Page: PC
    ##################################################           
    # pc_year_reactive <- reactive( {
    #   filter(pc, pc$Year %in% input$fin_Year) 
@@ -63,17 +48,23 @@ shinyServer(function(input, output) {
      data
   }) # end reactive
    
-   pc_finance_plot_reactive <- reactive({
-     if (input$fin_type == "Number") {
-       t = "Number"
-            }  else if (input$fin_type == "Percentage") {
-              t = "Percentage"
-            } else if (input$fin_type == "Total Assets") {
-              t = "Total Assets"
-            }   else if (input$fin_type == "Total Revenue")  {
-              t = "Total Revenue"
-   }
-     })
+   
+   ##################################################
+   ### 2: 2-2 Page: PF
+   ################################################## 
+   pf_finance_reactive <- reactive({
+     pf_finance <- pf_finance %>% 
+       filter(Year %in% input$pf_fin_Year)
+     
+     if (input$pf_fin_info == "Category") {
+       data <- pf_finance_category(pf_data = pf_finance, 
+                                   states = input$pf_fin_states)
+     } else if (input$pf_fin_info == "Expense Level") {
+       data <- pf_finance_expense(pf_finance,
+                                  input$pf_fin_states)
+     }
+     data
+   })
    
    ##################################################
    ### 2nd Page: General/Summary/Overview
@@ -85,7 +76,7 @@ shinyServer(function(input, output) {
        if (input$fin_info == "Category") {
          p <- finance_chart_category(data = pc_finance_reactive(), 
                                      pc_finance_reactive()$"Number")
-        } else if (input$fin_info == "Expense_Level") {
+        } else if (input$fin_info == "Expense Level") {
           p <- finance_chart_expense(data = pc_finance_reactive(), 
                                      pc_finance_reactive()$"Number")
         }
@@ -93,7 +84,7 @@ shinyServer(function(input, output) {
        if (input$fin_info == "Category") {
          p <- finance_chart_category(data = pc_finance_reactive(), 
                                      pc_finance_reactive()$"Percentage")
-       } else if (input$fin_info == "Expense_Level") {
+       } else if (input$fin_info == "Expense Level") {
          p <- finance_chart_expense(data = pc_finance_reactive(), 
                                     pc_finance_reactive()$"Percentage")
        }
@@ -102,7 +93,7 @@ shinyServer(function(input, output) {
        if (input$fin_info == "Category") {
          p <- finance_chart_category(data = pc_finance_reactive(), 
                                      pc_finance_reactive()$"Total Assets")
-       } else if (input$fin_info == "Expense_Level") {
+       } else if (input$fin_info == "Expense Level") {
          p <- finance_chart_expense(data = pc_finance_reactive(), 
                                     pc_finance_reactive()$"Total Assets")
        }
@@ -110,7 +101,7 @@ shinyServer(function(input, output) {
        if (input$fin_info == "Category") {
          p <- finance_chart_category(data = pc_finance_reactive(), 
                                      pc_finance_reactive()$"Total Assets (%)")
-       } else if (input$fin_info == "Expense_Level") {
+       } else if (input$fin_info == "Expense Level") {
          p <- finance_chart_expense(data = pc_finance_reactive(), 
                                     pc_finance_reactive()$"Total Assets (%)")
        }
@@ -118,7 +109,7 @@ shinyServer(function(input, output) {
        if (input$fin_info == "Category") {
          p <- finance_chart_category(data = pc_finance_reactive(), 
                                      pc_finance_reactive()$"Total Expenses")
-       } else if (input$fin_info == "Expense_Level") {
+       } else if (input$fin_info == "Expense Level") {
          p <- finance_chart_expense(data = pc_finance_reactive(), 
                                     pc_finance_reactive()$"Total Expenses")
        }
@@ -126,7 +117,7 @@ shinyServer(function(input, output) {
        if (input$fin_info == "Category") {
          p <- finance_chart_category(data = pc_finance_reactive(), 
                                      pc_finance_reactive()$"Total Expenses (%)")
-       } else if (input$fin_info == "Expense_Level") {
+       } else if (input$fin_info == "Expense Level") {
          p <- finance_chart_expense(data = pc_finance_reactive(), 
                                     pc_finance_reactive()$"Total Expenses (%)")
        }
@@ -134,7 +125,7 @@ shinyServer(function(input, output) {
        if (input$fin_info == "Category") {
          p <- finance_chart_category(data = pc_finance_reactive(), 
                                      pc_finance_reactive()$"Total Revenue")
-       } else if (input$fin_info == "Expense_Level") {
+       } else if (input$fin_info == "Expense Level") {
          p <- finance_chart_expense(data = pc_finance_reactive(), 
                                     pc_finance_reactive()$"Total Revenue")
        }
@@ -142,7 +133,7 @@ shinyServer(function(input, output) {
        if (input$fin_info == "Category") {
          p <- finance_chart_category(data = pc_finance_reactive(), 
                                      pc_finance_reactive()$"Total Revenue (%)")
-       } else if (input$fin_info == "Expense_Level") {
+       } else if (input$fin_info == "Expense Level") {
          p <- finance_chart_expense(data = pc_finance_reactive(), 
                                     pc_finance_reactive()$"Total Revenue (%)")
        }
@@ -157,6 +148,95 @@ shinyServer(function(input, output) {
                                    rownames=FALSE, 
                                    options = list(
                                      paging = FALSE))
+  
+  ##################################################
+  ### 2: 2-2 Page: PF
+  ################################################## 
+  output$pf_finance_table <- renderDT({pf_finance_reactive()},
+                                   rownames=FALSE, 
+                                   options = list(
+                                     paging = FALSE))
+  
+  output$pf_finance_barchart <- renderPlotly({
+    #  type <- input$fin_type
+    
+    if (input$pf_fin_type == "Number") {
+      if (input$pf_fin_info == "Category") {
+        p2 <- finance_chart_category(data = pf_finance_reactive(), 
+                                    pf_finance_reactive()$"Number")
+      } else if (input$pf_fin_info == "Expense Level") {
+        p2 <- finance_chart_expense(data = pf_finance_reactive(), 
+                                   pf_finance_reactive()$"Number")
+      }
+    } 
+    
+      else if (input$pf_fin_type == "Percentage") {
+      if (input$pf_fin_info == "Category") {
+        p2 <- finance_chart_category(data = pf_finance_reactive(), 
+                                    pf_finance_reactive()$"Percentage")
+      } else if (input$pf_fin_info == "Expense Level") {
+        p2 <- finance_chart_expense(data = pf_finance_reactive(), 
+                                   pf_finance_reactive()$"Percentage")
+      }} 
+    
+    else if (input$pf_fin_type == "Total Assets") {
+      if (input$pf_fin_info == "Category") {
+        p2 <- finance_chart_category(data = pf_finance_reactive(), 
+                                    pf_finance_reactive()$"Total Assets")
+      } else if (input$pf_fin_info == "Expense Level") {
+        p2 <- finance_chart_expense(data = pf_finance_reactive(), 
+                                   pf_finance_reactive()$"Total Assets")
+      }}
+    
+    else if (input$pf_fin_type == "Total Assets (%)") {
+      if (input$pf_fin_info == "Category") {
+        p2 <- finance_chart_category(data = pf_finance_reactive(), 
+                                    pf_finance_reactive()$"Total Assets (%)")
+      } else if (input$pf_fin_info == "Expense Level") {
+        p2 <- finance_chart_expense(data = pf_finance_reactive(), 
+                                   pf_finance_reactive()$"Total Assets (%)")
+      }}  
+    
+    else if (input$pf_fin_type == "Total Expenses") {
+      if (input$pf_fin_info == "Category") {
+        p2 <- finance_chart_category(data = pf_finance_reactive(), 
+                                    pf_finance_reactive()$"Total Expenses")
+      } else if (input$pf_fin_info == "Expense Level") {
+        p2 <- finance_chart_expense(data = pf_finance_reactive(), 
+                                   pf_finance_reactive()$"Total Expenses")
+      }}
+    
+    else if (input$pf_fin_type == "Total Expenses (%)") {
+      if (input$pf_fin_info == "Category") {
+        p2 <- finance_chart_category(data = pf_finance_reactive(), 
+                                    pf_finance_reactive()$"Total Expenses (%)")
+      } else if (input$pf_fin_info == "Expense Level") {
+        p2 <- finance_chart_expense(data = pf_finance_reactive(), 
+                                   pf_finance_reactive()$"Total Expenses (%)")
+      }}
+    
+    else if (input$pf_fin_type == "Total Revenue") {
+      if (input$pf_fin_info == "Category") {
+        p2 <- finance_chart_category(data = pf_finance_reactive(), 
+                                    pf_finance_reactive()$"Total Revenue")
+      } else if (input$pf_fin_info == "Expense Level") {
+        p2 <- finance_chart_expense(data = pf_finance_reactive(), 
+                                   pf_finance_reactive()$"Total Revenue")
+      }} 
+    
+    else if (input$pf_fin_type == "Total Revenue (%)") {
+      if (input$pf_fin_info == "Category") {
+        p2 <- finance_chart_category(data = pf_finance_reactive(), 
+                                    pf_finance_reactive()$"Total Revenue (%)")
+      } else if (input$pf_fin_info == "Expense Level") {
+        p2 <- finance_chart_expense(data = pf_finance_reactive(), 
+                                   pf_finance_reactive()$"Total Revenue (%)")
+      }}
+    
+    ggplotly(p2) %>%
+      layout(hoverlabel = list(bgcolor = "white")) 
+  } # end renderPlotly}
+  ) # end renderPlotly
   
   ##################################################
   ### 1st Page: General/Summary/Overview
@@ -182,29 +262,16 @@ shinyServer(function(input, output) {
   ##################################################
   ### 3rd Page
   ##################################################   
-  output$pctable19 <-  renderDT({pc19_reactive()},
-                               rownames=FALSE, 
-                               options = list(
-                                 autoWidth = TRUE, 
-                                 pageLength=15
-                                 ))
+  observe({
+    if(is.null(input$send) || input$send==0) return(NULL)
+    from <- isolate(input$from)
+    to <- isolate(input$to)
+    subject <- isolate(input$subject)
+    msg <- isolate(input$message)
+    sendmail(from, to, subject, msg)
+  })
+  
+  
+  
   } # end function
 ) # end ShinyServer
-
-
-###################################################
-## Reusable Functions
-###################################################
-
-# v_trend <- reactiveValues(data = NULL)
-# 
-# observeEvent(input$num, {
-#   v_trend$data <- nonprofit_trend(data = size, 
-#                                   year = input$Trend_Year)
-# })
-# 
-# observeEvent(input$perc, {
-#   v_trend$data <- nonprofit_trend_perc(data = size, 
-#                                   year = input$Trend_Year)
-# })
-
