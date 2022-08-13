@@ -1,5 +1,5 @@
 ---
-title: "Nonprofit Sector In Brief Dashboard"
+title: "Nonprofit Sector In Brief Flex Dashboard"
 output: 
   flexdashboard::flex_dashboard:
     logo: Resized_Urban_Logo.png
@@ -62,13 +62,14 @@ p_trend <- Nonprofit_trend %>%
   ggplot(aes(x = as.factor(Year), 
              group=1)) +
   geom_line(aes(y = `All registered nonprofits`), 
-            color = "#00CCFF") +
+            color = "#000000") +
   geom_point(aes(y = `All registered nonprofits`), 
-             color = "#00CCFF", size = .8) +
+             color = "#000000", 
+             size = .8) +
   geom_line(aes(y = `501(c)(3) public charities`), 
-            color = "#99FF33") +
+            color = "#1696d2") +
   geom_point(aes(y = `501(c)(3) public charities`), 
-             color = "#99FF33", 
+             color = "#1696d2", 
              size = .8) +
   geom_line(aes(y = `501(c)(3) private foundations`), 
             color = "#FF9933") +
@@ -117,16 +118,17 @@ ggplotly(p_trend) %>%
 
 ***
 
-- The number of registered nonprofits reached its highest point in 2017 but have been decreasing since then. 
+- The number of registered nonprofits in the US was highest in 2017 and has been decreasing since then. 
 
-- 501 c(3) Public charities counted for a great percentage of all nonprofits 
+- Over 75% 501 c(3) organizations are Public charities in 2019
 
-- Private foundations changed at a lower magnitude compared to private foundations
+- Number of Private foundations remained constant over years compared to public charity-type nonprofits
 
 - The nonprofit sector is heavily impacted by the domestic economic market
 
 
 $\textbf{Source:}$ IRS Business Master File 2002, 2012, 2017, 2022
+
 
 
 ### Financial Information by Type
@@ -165,14 +167,14 @@ ggplotly(p_fin) %>%
 
 ***
 
-- In the year of 2019, public charities had the most assets, spend the most, and returned the most revenues among all nonprofits. 
+- In 2019, public charity-type nonprofits had the most total assets, spend the most, and earned the most revenues among all nonprofit types. 
 
-- All nonprofits, on average, were profitable this year, calculated as $\text{Revenue - Expense}$.
+- All nonprofits, on average, were profitable in 2019 if calculating profits as the gap between revenue and expense.
 
-- Private foundations were more profitable than public charities, considering private foundations represented a much smaller share than public foundations, whereas, the gaps in expense and revenues (PF is 4ish times smaller than PC) are not as great as the size differences (PF is 10 times smaller than PC)
+- Generally, Private foundations were more profitable than public charities, considering private foundations represented a smaller share of all nonprofits than public charities, however, they had smaller gaps between expense and revenues (PF profited 4ish times less than PC) than their size differences (There are 10 times more PC than PF)
 
+$\textbf{Source:}$ NCCS Core File 2019
 
-Source: NCCS Core File 2019
 
 ### Outside NCCS Scope
 
@@ -207,7 +209,7 @@ ggplotly(p_out) %>%
 
 - Public charity has the most organizations out of NCCS scope.
 
-- Regardless of the type, the proportion of nonprofits outside the scope is very very small that these organizations are neglectable.
+- Regardless of the nonprofit type, the proportion of organizations outside the NCCS scope is small enough that we can neglect them.
 
 
 
@@ -274,9 +276,9 @@ ggplotly(
 ```
 ***
 
-- Most PC organizations fell under the low-spending end of the spectrum
+- Most Public Charities spent less than $100, 000 in 2019
 
-- The distribution is highly right-skewed
+- The spending distribution is highly right-skewed
 
 
 ### PC Financial Informaiton by by Expense Level
@@ -309,7 +311,8 @@ ggplotly(p_expense) %>%
 
 ***
 
-- Organizations who spent 10 million or more also earned significantly more than public charities who made fewer than 10 million.
+- Organizations that spent more also earned more and had more assets. 
+- Expenditure is positively related to total assets and total revenue.
 
 
 ### Number of PCs by Category
@@ -352,7 +355,8 @@ ggplotly(
 
 ***
 
-- Human services and other public/social services are the absolute majorities here.
+- Most 501 c(3) public charities could be classified under Human services, other public/social services, and other education groups.
+- Higher education and healthcare are the bottom two groups for PCs
 
 
 ### PC Finance Information by Category
@@ -406,8 +410,9 @@ ggplotly(p_category) %>%
 
 ***
 
-- Education and Healthcare are two big parts!
-
+- Hospitals and healthcare-related PCs had the smallest number in 2019 but spent and earned
+significantly more than PCs of other groups
+- Both PC spending and revenue bars are highly stratified
 
 
 
@@ -457,7 +462,8 @@ ggplotly(p_state_size) %>%
 
 ***
 
-- NY, CA, and FL have the most private foundation-type nonprofits.
+- NY, CA, FL, TX, and PA have the most private foundation-type nonprofits
+- Generally, larger states also have more PF nonprofits.
 
 ### PF Finance Information by State
 
@@ -507,9 +513,9 @@ ggplotly(
 
 ***
 
-- CA-based Private Foundations gained more total revenues than NY, despite the latter has more organizations than the former
+- CA-based Private Foundations gained more total revenues than their counterparts in NY, despite the latter has more organizations
 
-- PFs based in CA and NY exceed than their counterparts in other states on both total expense and total revenue
+- Private Foundations that are based in CA and NY exceed than their counterparts in other states on both measures of total expense and total revenue
 
 
 ### Number of PFs by Category
@@ -550,7 +556,9 @@ ggplotly(
 
 ***
 
-- There are an incredible amount of PFs under category "Other social and health benefits"
+- Most Private Foundations are classified under "Other social and health benefits"
+- Higher Education and Healthcare facilities are two categories that had the smallest number of PFs in 2019.
+- Overall, the category chart is consistent with what we are seeing in the 2019 PC Size-by-Category plot
 
 
 
@@ -605,7 +613,9 @@ ggplotly(p19_category) %>%
 
 *** 
 
-- Category "Other public and social benefits" are excluded due to its extraordinarily large number
+- Human services, other healthcare, and other education-related Private Foundations had higher spendings and earnings than PFs in other groups 
+- Higher educations and hospitals-related Private Foundatios earned and spent the least compared to other typed PFs (because of their small numbers)
+- Note: Category "Other public and social benefits" are excluded due to its extraordinarily large number
 
 
 Volunteering and Giving

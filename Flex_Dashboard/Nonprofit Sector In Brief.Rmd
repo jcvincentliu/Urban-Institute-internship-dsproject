@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE,
                       warning = FALSE)
 ```
 
-## Set-up
+## Load packages
 ```{r}
 library(httr)
 library(tidyverse)
@@ -33,13 +33,14 @@ library(leaflet)
 set_urbn_defaults()
 ```
 
-
+## Load Helper Functions
 ```{r}
 #source("NCCS_Code/Prep NCCS Core File.R")
 source("../Functions/classify.R")
 source("../Functions/Process NCCS Core Files.R")
 ```
 
+## Getting data (with helper functions)
 ```{r}
 core2019pf <- process_corefile(2019, "PF")
 core2019co <- process_corefile(2019, "CO")
@@ -47,7 +48,7 @@ core2019pc <- process_corefile(2019, "PC")
 
 core2019pc <- classify(core2019pc, "pc")
 core2019pf <- classify(core2019pf, "pf")
-
+ 
 ```
 
 
@@ -121,7 +122,7 @@ core2019pf = processcorefile("2019", "pf") %>% filter(LEVEL1 == "PF") %>% select
 core2019pf <- core2019pf[, c(1:6, 14:15, 7:13)]
 ```
 
-Process the Index data and Merge it with the core files
+### Process the Index data and Merge it with the core files
 ```{r}
 nteedocalleins <- read_csv("../Data/nteedocalleins.csv",
                            col_types = cols_only(EIN = col_character(),
@@ -130,6 +131,7 @@ nteedocalleins <- read_csv("../Data/nteedocalleins.csv",
                 rename(NTEEFINAL = NteeFinal)
 ```
 
+### Classify NCCS Core Data (with or without helper functions)
 ```{r}
 arts <- c("A")
 highered <- c("B4", "B5")
@@ -190,6 +192,7 @@ core2019pc <- classify(core2019pc)
 core2019pf <- classify(core2019pf)
 ```
 
+## Codebook - PC Data
 ```{r}
 # NTEE: National Taxonomy of Exempt Entities (NTEE) system
 
@@ -247,7 +250,6 @@ inflindex <- read_csv("../Data/External_Data/Inflation Index.csv", col_types = "
 #a <- read.csv("External_Data/Inflation Index.csv", row.names =1, header = TRUE)
 ```
 
-Move to next phase of cleaning 
 
 ```{r}
 bmfsize <- function(data, year) {
@@ -292,9 +294,10 @@ t <- bind_rows(b1,b2,b3, b4)
 t
 ```
 
-## First Visualizations
 
-### Trend Comparison by Org Type
+## Visualizations
+
+### Trend Graph by Org Type
 ```{r}
 p1 <- t %>%
 #  gather(stat, value, `All registered nonprofits`, `501(c)(3) public charities`) %>%
@@ -322,7 +325,7 @@ p1 #+  theme(legend.position="right", legend.direction = "vertical")
 #ggplotly(p1)
 ```
 
-### Finance
+### Finance-by-Org-Type Chart 
 ```{r}
 corefiles <- function(data, dyear, dtype) {
   
@@ -415,7 +418,7 @@ ggplotly(p2)
 ```
 
 
-### In or Outside NCCS
+### In or Outside NCCS Chart
 
 ```{r}
 df1 <- bmf2019 %>% filter(!is.na(OUTNCCS)) %>% group_by(OUTNCCS) %>% summarise(n = n()) %>% mutate(perc = n/sum(n)) %>% arrange(-n) %>% add_column(type = c("ALL", "ALL"), .before = "OUTNCCS")
@@ -430,7 +433,7 @@ outnccs <- bind_rows(df1, df2, df3, df4)
 ```
 
 
-## PC 
+### PC Page
 ```{r}
 table1.data.long <- pc %>%
   left_join(co, by = "variable") %>%
@@ -449,7 +452,7 @@ core2019pc <- read_csv("../Data/Output_Data/new_core2019pc.csv") %>%
   select(!1)
 ```
 
-### PC - Expense Group
+### PC - Expense Chart
 ```{r}
 PC2019_ExpenseGroup <- core2019pc %>% 
   filter(((GRREC >= 50000)|(TOTREV>50000)), #filter out organizations below minimum filing threshold for 990-EZ
@@ -492,7 +495,7 @@ PC2019_ExpenseGroup = PC2019_ExpenseGroup[c(7, 1:6), ]
 PC2019_ExpenseGroup
 ```
 
-### PC - Category
+### PC - Category Chart
 ```{r}
 PC2019_CategoryGroup <- core2019pc %>% 
   filter(((GRREC >= 50000)|(TOTREV>50000)), #filter out organizations below minimum filing threshold for 990-EZ
@@ -556,7 +559,7 @@ PC2019_CategoryGroup %>%
 
 ```
 
-## PF
+### PF Page
 
 ### By State
 
@@ -685,7 +688,7 @@ table(cut_number(pf_size_by_state$count, 5)) #[0, 312, 633, 1100, 1850, 8360]
 ```
 
 
-## Data Saving
+## Saving Data
 ```{r}
 write.csv(t, "../Data/Output_Data/Number_nonprofit_trend.csv") 
 
