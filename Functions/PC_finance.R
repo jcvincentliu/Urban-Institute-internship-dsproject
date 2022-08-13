@@ -1,5 +1,11 @@
 
 
+# Function to create a nonprofit category/expense table. The function takes in the dataset name
+# (as a string) and state names of the user's interest (as a vector of strings) and returns
+# a processed and ready-to-use dataset. 
+
+# Both functions are only for PC data.
+
 library(tidyverse)
 library(httr)
 library(usmap)

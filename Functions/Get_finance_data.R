@@ -1,3 +1,9 @@
+# The function takes year as an input and processes the data to include `expense level` and 
+# `NTEE category`. Specifically, the function first loads the data with the `process_corefile()`
+# function. It then classifies the data based on the type of the organization (PC/PF) as well as
+# add one new column: Year. The function returns a ready-to-used dataset for the portal's 
+# Organization Type page.
+
 
 library(tidyverse)
 library(httr)
@@ -26,6 +32,4 @@ return(pf_fin)
   
 }
   
-  
-  
-  
+ 

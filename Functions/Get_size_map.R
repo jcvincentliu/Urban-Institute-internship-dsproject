@@ -1,4 +1,6 @@
 
+# The function takes in a dataset and years of interests and returns a Leaflet choropleth map.
+# The map captures nonprofit numbers in each US state in selected years.
 
 library(tidyverse)
 library(httr)

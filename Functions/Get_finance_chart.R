@@ -1,3 +1,10 @@
+# The functions takes a dataset and returns a graph about NTEE categories or expense level.  
+# The function takes in one more input: `finance_info`, the specific financial information 
+# that the user cares about. The returned graph is static and can be used with `ggplot()`
+# to get an interactive plot.
+
+# Note: To use the function, the format should be (finance_info is a string): 
+# finance_chart_category(data_name, data_name$finance_info)
 
 library(tidyverse)
 library(httr)
@@ -25,6 +32,7 @@ finance_chart_category <- function(data, finance_info) {
                                               size = 0.8, 
                                               linetype = "dashed")
           ) +
+    
     geom_text(aes(label = finance_info),
               position= position_dodge(width=1), 
               vjust =-.1, 
@@ -49,6 +57,7 @@ finance_chart_expense <- function(data, finance_info) {
                                                      size = 0.8, 
                                                      linetype = "dashed")) +
               scale_x_discrete(limits = rev) +
+    
     geom_text(aes(label = finance_info),
               position= position_dodge(width=1), 
               vjust =-.1, 
