@@ -1,3 +1,5 @@
+# Nonprofit Sector In Brief Shiny Dashboard
+
 ## To view the Shiny portal:
 - Go to http://127.0.0.1:6664/. (Note: this method is untested)
 - In R: Clone the repository, open `ui.R`, and press the Run App button 
