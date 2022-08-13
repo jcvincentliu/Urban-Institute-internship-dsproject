@@ -1,10 +1,11 @@
 ---
-title: "Process_PF_data"
+title: "R Markdown file to get data for the PF page of Shiny and make sure functions are working"
 author: "Vincent Liu"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
+## Initial Setup
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
                       message = FALSE,
@@ -25,8 +26,7 @@ source("../../Functions/PF_finance.R")
 ```
 
 
-## PF Data
-
+## Re-clean PF 2019 Data
 ```{r}
 pf2019 <- read_csv("../../Data/coreco.core2019pf.csv", col_types = cols_only(
                 EIN = col_character(), 
@@ -85,16 +85,42 @@ write.csv("pf2019_cleaned", "../../Data/core2019pf.csv")
 ```
 
 
+## Get PF data
 ```{r}
-pf2015 <- get_pf_finance_data(2015)
-
 # PF lacks 2018, 2017, 2016 data
+pf2019 <- get_pf_finance_data(2019)
+#pf2018 <- get_pf_finance_data(2018)
+#pf2017 <- get_pf_finance_data(2017)
+#pf2016 <- get_pf_finance_data(2016)
+pf2015 <- get_pf_finance_data(2015)
+pf2014 <- get_pf_finance_data(2014)
+pf2013 <- get_pf_finance_data(2013)
+pf2012 <- get_pf_finance_data(2012)
+pf2011 <- get_pf_finance_data(2011)
+pf2010 <- get_pf_finance_data(2010)
+pf2009 <- get_pf_finance_data(2009)
+pf2008 <- get_pf_finance_data(2008)
+pf2007 <- get_pf_finance_data(2007)
+
+pf_finance <- rbind(pf2019, pf2015, pf2014, pf2013, pf2012,
+                    pf2011, pf2010, pf2009, pf2008, pf2007)
+
+saveRDS(pf_finance, "pf_finance.rds")
+```
+
+
+## Test functions
+```{r}
+## Try out functions 
 read_csv(paste("https://nccs-data.urban.org/dl.php?f=core/",  
                    as.character(2018), "/coreco.core", as.character(2018),
                    tolower("PF"), ".csv", sep =""))
 
-pf_finance_category(pf2015, c("AZ", "CA", "IL", "MN", "DC"))
-pf_finance_expense(pf2015, c("AZ", "CA", "IL", "MN", "DC"))
+pf_category <- pf_finance_category(pf_finance, c("AZ", "CA", "IL", "MN", "DC"))
+pf_exp <- pf_finance_expense(pf_finance, c("AZ", "CA", "IL", "MN", "DC"))
+
+finance_chart_expense(pf_exp, pf_exp$"Number")
+finance_chart_category(pf_category, pf_category$"Number")
 
 ```
 

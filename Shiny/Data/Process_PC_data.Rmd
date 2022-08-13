@@ -1,10 +1,11 @@
 ---
-title: "New Data"
+title: "R Markdown file to get data for the PC page of Shiny and make sure functions are working"
 author: "Vincent Liu"
 date: "`r Sys.Date()`"
 output: html_document
 ---
 
+## Initial Set-up
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
                       message = FALSE,
@@ -18,24 +19,17 @@ library(urbnthemes)
 library(plotly)
 
 set_urbn_defaults()
-```
-
-
-## PC Data
-```{r}
 
 source("../../Functions/Process_core_file.R")
 source("../../Functions/Get_finance_data.R")
+```
 
-pc2019 <- pc2019 %>% add_column(Year = "2019", .after = "EIN")
-pc2019 <- pc2019 %>% select(Year, NTEEGRP, EXPCAT, ASS_EOY, EXPS, GRREC, TOTREV, STATE, ZIP5)
 
-pc2018 <- process_corefile(2018, "PC")
-pc2018 <- classify(pc2018, "PC")
-pc2018 <- pc2018 %>% add_column(Year = "2018", .after = "EIN")
-pc2018 <- pc2018 %>% select(Year, NTEEGRP, EXPCAT, ASS_EOY, EXPS, GRREC, TOTREV, STATE, ZIP5)
-
-#pc2017 <- process_corefile(2017, "pc") 
+## Get all PC data
+```{r}
+## Get all the data
+pc2019 <- get_pc_finance_data(2019)
+pc2018 <- get_pc_finance_data(2018)
 pc2017 <- get_pc_finance_data(2017)
 pc2016 <- get_pc_finance_data(2016)
 pc2015 <- get_pc_finance_data(2015) # There is a change of naming convention in 2005
@@ -46,16 +40,23 @@ pc2011 <- get_pc_finance_data(2011)
 pc2010 <- get_pc_finance_data(2010)
 
 
-
 pc_finance <- rbind(pc2019, pc2018, pc2017, pc2016, pc2015, 
                     pc2014, pc2013, pc2012, pc2011, pc2010)
 
 saveRDS(pc_finance, "pc_finance.rds")
-
 ```
 
-
+## Try out functions
 ```{r}
+
+pc2019 <- pc2019 %>% add_column(Year = "2019", .after = "EIN")
+pc2019 <- pc2019 %>% select(Year, NTEEGRP, EXPCAT, ASS_EOY, EXPS, GRREC, TOTREV, STATE, ZIP5)
+
+pc2018 <- process_corefile(2018, "PC")
+pc2018 <- classify(pc2018, "PC")
+pc2018 <- pc2018 %>% add_column(Year = "2018", .after = "EIN")
+pc2018 <- pc2018 %>% select(Year, NTEEGRP, EXPCAT, ASS_EOY, EXPS, GRREC, TOTREV, STATE, ZIP5)
+
 pc2019 <- read_csv("../../Data/core2019pc.csv") %>% select(!1)
   
 pc2019 %>% 
